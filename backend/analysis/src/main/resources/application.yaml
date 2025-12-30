@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: analysis
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/analysis
+    username: user
+    password: password
+

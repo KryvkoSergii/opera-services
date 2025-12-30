@@ -1,0 +1,93 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '2.2.21'
+    id 'org.jetbrains.kotlin.plugin.spring' version '2.2.21'
+    id 'org.springframework.boot' version '3.5.9'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.openapi.generator' version '7.18.0'
+}
+
+group = 'ua.com.goit.clearbreath'
+version = '0.0.1-SNAPSHOT'
+description = 'Core service for clear breath'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
+    runtimeOnly "org.postgresql:r2dbc-postgresql"
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'io.projectreactor.kotlin:reactor-kotlin-extensions'
+    implementation 'org.jetbrains.kotlin:kotlin-reflect'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-reactor'
+    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
+    implementation 'io.swagger.core.v3:swagger-annotations-jakarta:2.2.24'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    testImplementation 'org.springframework.boot:spring-boot-starter-data-r2dbc-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webflux-test'
+    testImplementation 'org.jetbrains.kotlin:kotlin-test-junit5'
+    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.addAll '-Xjsr305=strict', '-Xannotation-default-target=param-property'
+    }
+}
+
+def repoRootDir = layout.projectDirectory.dir("../..")
+def openApiSpec = repoRootDir.file("contract/core-api.yaml")
+def openApiOut = layout.buildDirectory.dir("generated/openapi")
+
+
+openApiGenerate {
+    generatorName = "kotlin-spring"
+    inputSpec = openApiSpec.asFile.absolutePath
+    outputDir = openApiOut.get().asFile.absolutePath
+
+    // важливо: пакети
+    apiPackage = "ua.com.goit.clearbreath.api"
+    modelPackage = "ua.com.goit.clearbreath.model"
+    invokerPackage = "ua.com.goit.clearbreath.invoker"
+
+    globalProperties = [
+            apis  : "",
+            models: ""
+    ]
+
+    // ключові опції
+    configOptions = [
+            interfaceOnly       : "true",
+            useSpringBoot3      : "true",
+            reactive            : "true",
+            serializationLibrary: "jackson",
+            dateLibrary         : "java8",
+            enumPropertyNaming  : "UPPERCASE",
+            useTags             : "true"
+    ]
+
+    generateApiTests = false
+    generateModelTests = false
+    generateApiDocumentation = false
+    generateModelDocumentation = false
+}
+
+tasks.named("compileKotlin") {
+    dependsOn("openApiGenerate")
+}
+
+sourceSets.main.kotlin.srcDirs += openApiOut.map { it.dir("src/main/kotlin") }.get().asFile
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+

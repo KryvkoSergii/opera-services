@@ -1,0 +1,300 @@
+openapi: 3.0.3
+info:
+  title: Breath Analysis API
+  version: 0.1.0
+  description: API for uploading respiratory audio, browsing requests history, and receiving status updates via SSE.
+
+tags:
+  - name: Analysis
+  - name: History
+  - name: Realtime
+
+security:
+  - bearerAuth: [ ]
+
+paths:
+  /v1/analyses:
+    post:
+      tags: [ Analysis ]
+      summary: Upload audio + metadata to create a analysis request
+      description: >
+        Accepts an audio file and a JSON payload with "type" (breath/cough/lung).
+        Requires Authorization: Bearer <token>.
+      operationId: createAnalysisRequest
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [ file, meta ]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Audio file (wav/mp3/m4a etc.)
+                meta:
+                  $ref: "#/components/schemas/AnalysisCreateMeta"
+            encoding:
+              meta:
+                contentType: application/json
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalysisCreateResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "415":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unsupported Media Type
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+    get:
+      tags: [ History ]
+      summary: Get requests history (paginated)
+      operationId: listAnalysisRequests
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: perPage
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 10
+      responses:
+        "200":
+          description: Paginated list of requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedRequestHistory"
+              examples:
+                page1:
+                  value:
+                    total: 124
+                    page: 1
+                    perPage: 20
+                    items:
+                      - requestId: "req_01HAAAAAAA111"
+                        requested: "2025-12-29T19:00:00Z"
+                        type: "breath"
+                        recommendation: "Visit a healthcare professional."
+                        status: "FINISHED"
+                        details:
+                          - model: "X1"
+                            details: "Pattern suggests mild obstruction."
+                            status: "moderate probability"
+                      - requestId: "req_01HBBBBBBB222"
+                        requested: "2025-12-29T19:30:00Z"
+                        type: "cough"
+                        recomendation: null
+                        status: "IN_PROGRESS"
+                        details: [ ]
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /v1/analyses/{requestId}/events:
+    get:
+      tags: [ Realtime ]
+      summary: Stream request status updates via Server-Sent Events (SSE)
+      description: >
+        SSE endpoint. Client subscribes and receives status updates for a specific requestId.
+        Events may include retries/heartbeats. Requires Authorization: Bearer <token>.
+      operationId: streamRequestEvents
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: SSE stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              examples:
+                sseExample:
+                  value: |
+                    event: status
+                    data: {"requestId":"req_01HAAAAAAA111","status":"IN_PROGRESS","timestamp":"2025-12-29T20:12:11Z"}
+
+                    event: status
+                    data: {"requestId":"req_01HAAAAAAA111","status":"FINISHED","timestamp":"2025-12-29T20:13:45Z"}
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Request not found
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            badRequest:
+              value:
+                code: "BAD_REQUEST"
+                message: "Invalid payload."
+    Unauthorized:
+      description: Missing or invalid Authorization header
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            unauthorized:
+              value:
+                code: "UNAUTHORIZED"
+                message: "Authorization token is missing or invalid."
+    ServerError:
+      description: Server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            serverError:
+              value:
+                code: "INTERNAL_ERROR"
+                message: "Unexpected error."
+
+  schemas:
+    SourceType:
+      type: string
+      enum: [ microphone, stethoscope ]
+      description: Type of recorded sound
+
+    RequestStatus:
+      type: string
+      enum: [ IN_PROGRESS, FINISHED, FAILED ]
+
+    ProbabilityStatus:
+      type: string
+      enum:
+        - high
+        - moderate
+        - low
+
+    AnalysisCreateMeta:
+      type: object
+      required: [ type ]
+      properties:
+        type:
+          $ref: "#/components/schemas/SourceType"
+      additionalProperties: false
+      example:
+        type: microphone
+
+    AnalysisCreateResponse:
+      type: object
+      required: [ requestId, status, requested ]
+      properties:
+        requestId:
+          type: string
+        status:
+          $ref: "#/components/schemas/RequestStatus"
+        requested:
+          type: string
+          format: date-time
+      example:
+        requestId: "req_01HAAAAAAA111"
+        status: "IN_PROGRESS"
+        requested: "2025-12-29T19:00:00Z"
+
+    ModelDetail:
+      type: object
+      required: [ model, details, status ]
+      properties:
+        model:
+          type: string
+          description: Model name/version (e.g., X1)
+        details:
+          type: string
+          description: descriptive details from the model
+        status:
+          $ref: "#/components/schemas/ProbabilityStatus"
+
+    HistoryItem:
+      type: object
+      required: [ requestId, requested, type, status, details ]
+      properties:
+        requestId:
+          type: string
+        requested:
+          type: string
+          format: date-time
+        type:
+          $ref: "#/components/schemas/SourceType"
+        recommendation:
+          type: string
+        status:
+          $ref: "#/components/schemas/RequestStatus"
+        details:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModelDetail"
+
+    PaginatedRequestHistory:
+      type: object
+      required: [ total, page, perPage, items ]
+      properties:
+        total:
+          type: integer
+          minimum: 0
+        page:
+          type: integer
+          minimum: 1
+        perPage:
+          type: integer
+          minimum: 1
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/HistoryItem"
+
+    ErrorResponse:
+      type: object
+      required: [ code, message ]
+      properties:
+        code:
+          type: string
+        message:
+          type: string

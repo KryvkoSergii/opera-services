@@ -1,0 +1,5 @@
+.idea
+/backend/analysis/.kotlin
+/backend/analysis/build
+/backend/analysis/.env
+/backend/analysis/docker
