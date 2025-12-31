@@ -21,7 +21,7 @@ data class HistoryEntity(
     @Column("source_type")
     val sourceType: SourceTypeEntity,
 
-    @Column("user")
+    @Column("user_id")
     val user: UUID,
 
     @Column("recommendation")

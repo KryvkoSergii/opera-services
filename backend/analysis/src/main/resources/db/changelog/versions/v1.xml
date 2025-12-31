@@ -22,7 +22,7 @@
                 <constraints nullable="false"/>
             </column>
 
-            <column name="user" type="uuid">
+            <column name="user_id" type="uuid">
                 <constraints nullable="false"/>
             </column>
 

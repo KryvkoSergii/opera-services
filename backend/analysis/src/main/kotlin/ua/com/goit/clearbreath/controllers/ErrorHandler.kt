@@ -10,6 +10,7 @@ class ErrorHandler {
 
     @ExceptionHandler
     fun handle(ex: Exception): ResponseEntity<ErrorResponse> {
+        ex.printStackTrace()
         return ResponseEntity.status(500)
             .body(ErrorResponse( "500", ex.message ?: "Internal Server Error"))
     }

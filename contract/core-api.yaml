@@ -29,19 +29,18 @@ paths:
           multipart/form-data:
             schema:
               type: object
-              required: [ file, meta ]
+              required: [ audio-file, source-type ]
               properties:
                 audio-file:
                   type: string
                   format: binary
                   description: Audio file (wav/mp3/m4a etc.)
-                meta-data:
-                  $ref: "#/components/schemas/AnalysisCreateMeta"
+                source-type:
+                  type: string
+                  description: Type of recorded sound
             encoding:
               audio-file:
                 contentType: audio/wav, audio/x-wav, audio/mpeg
-              meta-data:
-                contentType: application/json
       responses:
         "201":
           description: Created
