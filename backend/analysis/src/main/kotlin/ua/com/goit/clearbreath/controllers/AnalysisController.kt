@@ -14,7 +14,7 @@ import java.nio.file.Paths
 @RestController
 class AnalysisController(private val service: AnalysisService) : AnalysisApi {
 
-    override fun createAnalysisRequest(audioFile: MultipartFile, sourceType: String):
+    override fun createAnalysisRequest(sourceType: SourceType, audioFile: MultipartFile):
             ResponseEntity<AnalysisCreateResponse> {
         val baseDir = Paths.get("").toAbsolutePath()
         val uploadDir = baseDir.resolve("tmp")
@@ -25,7 +25,7 @@ class AnalysisController(private val service: AnalysisService) : AnalysisApi {
 
         audioFile.transferTo(target)
 
-        service.startAnalysis(audioFile, SourceType.forValue(sourceType)).block().let {
+        service.startAnalysis(audioFile, sourceType).block().let {
             return ResponseEntity.status(HttpStatus.CREATED)
                 .body(it)
         }

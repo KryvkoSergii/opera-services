@@ -23,21 +23,25 @@ paths:
       operationId: createAnalysisRequest
       security:
         - bearerAuth: [ ]
+      parameters:
+        - name: source-type
+          in: query
+          required: true
+          description: Type of recorded sound
+          schema:
+            $ref: "#/components/schemas/SourceType"
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
               type: object
-              required: [ audio-file, source-type ]
+              required: [ audio-file]
               properties:
                 audio-file:
                   type: string
                   format: binary
                   description: Audio file (wav/mp3/m4a etc.)
-                source-type:
-                  type: string
-                  description: Type of recorded sound
             encoding:
               audio-file:
                 contentType: audio/wav, audio/x-wav, audio/mpeg

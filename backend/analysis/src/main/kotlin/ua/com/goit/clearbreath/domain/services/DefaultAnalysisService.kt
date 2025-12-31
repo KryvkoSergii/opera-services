@@ -36,7 +36,7 @@ class DefaultAnalysisService(
         return repository.save(request)
             .map { i ->
                 AnalysisCreateResponse(
-                    i.toString(),
+                    i.id.toString(),
                     statusMapper.toDto(i.processingStatus),
                     OffsetDateTime.of(i.createdAt, ZoneOffset.UTC)
                 )
