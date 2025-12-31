@@ -2,13 +2,18 @@ spring:
   application:
     name: analysis
   r2dbc:
-    url: r2dbc:postgresql://localhost:5432/analysis
+    url: r2dbc:postgresql://localhost:5432/analysis?options=-c%20TimeZone=Europe%2FKyiv
     username: user
     password: password
   liquibase:
     enabled: true
     change-log: classpath:db/changelog/db.changelog-master.xml
-    url: jdbc:postgresql://localhost:5432/analysis
+    url: jdbc:postgresql://localhost:5432/analysis?options=-c%20TimeZone=Europe%2FKyiv
     user: user
     password: password
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5MB
+      max-request-size: 6MB
 

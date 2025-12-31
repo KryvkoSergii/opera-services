@@ -31,14 +31,16 @@ paths:
               type: object
               required: [ file, meta ]
               properties:
-                file:
+                audio-file:
                   type: string
                   format: binary
                   description: Audio file (wav/mp3/m4a etc.)
-                meta:
+                meta-data:
                   $ref: "#/components/schemas/AnalysisCreateMeta"
             encoding:
-              meta:
+              audio-file:
+                contentType: audio/wav, audio/x-wav, audio/mpeg
+              meta-data:
                 contentType: application/json
       responses:
         "201":

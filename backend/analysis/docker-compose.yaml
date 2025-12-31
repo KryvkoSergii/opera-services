@@ -1,7 +1,7 @@
 services:
   database:
     container_name: analysis-database
-    image: postgres:13
+    image: postgres:13.23
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}

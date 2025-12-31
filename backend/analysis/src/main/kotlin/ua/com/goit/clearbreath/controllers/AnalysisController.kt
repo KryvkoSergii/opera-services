@@ -7,13 +7,24 @@ import org.springframework.web.multipart.MultipartFile
 import ua.com.goit.clearbreath.api.AnalysisApi
 import ua.com.goit.clearbreath.model.AnalysisCreateMeta
 import ua.com.goit.clearbreath.model.AnalysisCreateResponse
+import java.nio.file.Files
+import java.nio.file.Paths
 
 @RestController
-class AnalysisController: AnalysisApi {
+class AnalysisController : AnalysisApi {
 
-    override suspend fun createAnalysisRequest(file: MultipartFile, meta: AnalysisCreateMeta):
-            ResponseEntity<AnalysisCreateResponse> {
-        return ResponseEntity.status(HttpStatus.CREATED).build()
+    override fun createAnalysisRequest(
+        audioFile: MultipartFile, metaData: AnalysisCreateMeta?
+    ): ResponseEntity<AnalysisCreateResponse> {
+        val baseDir = Paths.get("").toAbsolutePath()
+        val uploadDir = baseDir.resolve("tmp")
+        Files.createDirectories(uploadDir)
+
+        val fileName = audioFile.originalFilename ?: "audio.wav"
+        val target = uploadDir.resolve(fileName).toFile()
+
+        audioFile.transferTo(target)
+        return ResponseEntity(HttpStatus.CREATED)
     }
 
 }
