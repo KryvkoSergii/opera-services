@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+          http://www.liquibase.org/xml/ns/dbchangelog
+          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="001-create-history-table" author="sergii.kryvko">
+
+        <createTable tableName="history">
+
+            <column name="id" type="uuid" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="processing_status" type="varchar(20)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="source_type" type="varchar(20)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="user" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_at" type="timestamptz" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="updated_at" type="timestamptz"/>
+
+            <column name="recommendation" type="varchar(255)"/>
+
+        </createTable>
+
+    </changeSet>
+</databaseChangeLog>

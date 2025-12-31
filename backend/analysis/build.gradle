@@ -22,7 +22,9 @@ repositories {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
+    implementation 'org.liquibase:liquibase-core'
     runtimeOnly "org.postgresql:r2dbc-postgresql"
+    runtimeOnly 'org.postgresql:postgresql'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
     implementation 'io.projectreactor.kotlin:reactor-kotlin-extensions'
     implementation 'org.jetbrains.kotlin:kotlin-reflect'
@@ -53,7 +55,6 @@ openApiGenerate {
     inputSpec = openApiSpec.asFile.absolutePath
     outputDir = openApiOut.get().asFile.absolutePath
 
-    // важливо: пакети
     apiPackage = "ua.com.goit.clearbreath.api"
     modelPackage = "ua.com.goit.clearbreath.model"
     invokerPackage = "ua.com.goit.clearbreath.invoker"

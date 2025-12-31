@@ -5,4 +5,10 @@ spring:
     url: r2dbc:postgresql://localhost:5432/analysis
     username: user
     password: password
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.xml
+    url: jdbc:postgresql://localhost:5432/analysis
+    user: user
+    password: password
 
