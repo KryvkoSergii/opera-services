@@ -27,12 +27,14 @@ class DefaultAnalysisService(
         file: MultipartFile,
         sourceType: SourceType
     ): Mono<AnalysisCreateResponse> {
+        //create new analysis request
         val request = HistoryEntity(
             processingStatus = ProcessingStatusEntity.IN_PROGRESS,
             sourceType = sourceTypeMapper.toEntity(sourceType),
             user = UUID.randomUUID()
         )
 
+        //save to DB and return response
         return repository.save(request)
             .map { i ->
                 AnalysisCreateResponse(
