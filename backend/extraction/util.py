@@ -5,7 +5,7 @@ from scipy.signal import butter, lfilter
 import librosa
 import boto3
 
-ENCODER_PATH_OPERA_CE_EFFICIENTNET = "models/encoder-operaCE.ckpt"
+ENCODER_PATH_OPERA_CE_EFFICIENTNET = "libs/encoder-operaCE.ckpt"
 ENCODER_PATH_OPERA_CT_HT_SAT = "models/encoder-operaCT.ckpt"
 
 s3 = boto3.client("s3")

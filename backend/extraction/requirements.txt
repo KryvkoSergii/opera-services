@@ -1,0 +1,14 @@
+# Core ML
+torch==2.6.0
+torchvision==0.21.0
+
+# Numeric stack - pin to avoid numpy 2.x build on Lambda image
+numpy==1.26.4
+scipy==1.11.4
+
+# Audio processing
+librosa==0.10.2.post1
+soundfile==0.12.1
+
+# AWS
+boto3>=1.28.0

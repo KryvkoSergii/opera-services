@@ -4,11 +4,12 @@ import numpy as np
 import boto3
 import soundfile as sf
 from util import extract_opera_feature
+from models.models_eval import LinearHead
 
 
 # ⚠️ load model OUTSIDE handler (cold start only once)
-model = torch.jit.load("model.pt", map_location="cpu")
-model.eval()
+# model = torch.jit.load("model.pt", map_location="cpu")
+# model.eval()
 
 def handler(event, context):
     """
@@ -24,20 +25,18 @@ def handler(event, context):
     file_ref = FileInS3(bucket, key)
 
     dimension = 768
+    input_sec = 8
 
     features = extract_opera_feature(
-        audio_file,
+        file_ref = file_ref,
         pretrain="operaCT",
-        input_sec=8,
+        input_sec=input_sec,
         dim=dimension
     )
 
-    features = np.array(event["features"], dtype=np.float32)
-    x = torch.tensor(features).unsqueeze(0)
+    x = np.array(features, dtype=np.float32)
 
-    with torch.no_grad():
-        y = model(x)
-        prob = torch.sigmoid(y).item()
+    prob = apply_classifier(x, dimension)
 
     return {
         "statusCode": 200,
@@ -46,22 +45,8 @@ def handler(event, context):
         })
     }
 
-def inference(file_ref: FileInS3):
-    audio_file = np.array([file_path])
-
-    dimension = 768
-
-    features = extract_opera_feature(
-        audio_file,
-        pretrain="operaCT",
-        input_sec=8,
-        dim=dimension
-    )
-
-    x = np.array(features, dtype=np.float32)
-
-    ckpt_path = "cks/linear/kauh/linear_operaCT768_32_0.0001_50_1e-05-epoch=39-valid_auc=0.83.ckpt"
-
+def apply_classifier(x: np.ndarray, dimension: int):
+    ckpt_path = "libs/linear_covid_operaCT768_valid_auc=0.55.ckpt"
     model = LinearHead(feat_dim=dimension, classes=2).load_from_checkpoint(
         ckpt_path,
         map_location=torch.device("cpu")
@@ -72,4 +57,4 @@ def inference(file_ref: FileInS3):
     with torch.no_grad():
         logits = model(torch.tensor(x))
         probs = torch.softmax(logits, dim=1)
-        print("Prediction probabilities:", probs)
+        return probs.numpy()

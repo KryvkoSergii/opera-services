@@ -20,9 +20,6 @@ from typing import List
 from .htsat_util import PatchEmbed, Mlp, DropPath, trunc_normal_, to_2tuple, do_mixup, interpolate
 from . import config
 
-# below codes are based and referred from https://github.com/microsoft/Swin-Transformer
-# Swin Transformer for Computer Vision: https://arxiv.org/pdf/2103.14030.pdf
-
 def window_partition(x, window_size):
     """
     Args:
