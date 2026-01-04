@@ -1,23 +1,20 @@
-# AWS Lambda base image (Python 3.11)
-FROM public.ecr.aws/lambda/python:3.11
+FROM python:3.11-slim
 LABEL authors="Sergii_Kryvko"
 
-# System deps for librosa/soundfile/scipy
-# (Lambda image is Amazon Linux; use yum)
-RUN yum -y update && yum -y install \
-    gcc gcc-c++ make \
-    libsndfile \
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
-  && yum clean all
+    libsndfile1 \
+    build-essential \
+  && rm -rf /var/lib/apt/lists/*
 
-# Install Python deps into the Lambda task root (/var/task)
-# (Better caching: copy only requirements first)
-COPY requirements.txt .
-RUN pip3 install --no-cache-dir -r requirements.txt -t ${LAMBDA_TASK_ROOT}
+COPY requirements.txt /app/requirements.txt
+RUN pip install --upgrade pip \
+ && pip install --no-cache-dir \
+    --extra-index-url https://download.pytorch.org/whl/cpu \
+    -r /app/requirements.txt
 
-# Copy your app code into the Lambda task root
-COPY . ${LAMBDA_TASK_ROOT}
+COPY . /app
 
-# Lambda entrypoint: <module>.<function>
-# handler.py must expose function `handler(event, context)`
-CMD ["feature_extraction.handler"]
+CMD ["python", "-m", "main"]

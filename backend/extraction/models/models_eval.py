@@ -7,7 +7,7 @@ from sklearn import metrics
 import torch.nn as nn
 import numpy as np
 from torchmetrics import AUROC
-from src.model.htsat.htsat import HTSATWrapper
+from models.htsat.htsat import HTSATWrapper
 import random
 import torchaudio
 

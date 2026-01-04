@@ -1,0 +1,44 @@
+services:
+  localstack:
+    image: localstack/localstack:3
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3,sqs
+      - AWS_DEFAULT_REGION=eu-central-1
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:4566/_localstack/health" ]
+      interval: 5s
+      timeout: 2s
+      retries: 20
+
+  aws-init:
+    image: public.ecr.aws/aws-cli/aws-cli:latest
+    depends_on:
+      localstack:
+        condition: service_healthy
+    environment:
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=eu-central-1
+    volumes:
+      - ./backend/extraction/scripts:/scripts
+      - ./backend/extraction/samples:/samples
+    entrypoint: [ "sh", "/scripts/init-aws.sh" ]
+
+  extractor:
+    container_name: extractor
+    build: ./backend/extraction
+    depends_on:
+      - localstack
+      - aws-init
+    environment:
+      - AWS_REGION=eu-central-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_ENDPOINT_URL=http://localstack:4566
+      - QUEUE_URL=http://localstack:4566/000000000000/opera-queue
+      - RESULTS_BUCKET=results-bucket
+    command: ["python", "-m", "main"]

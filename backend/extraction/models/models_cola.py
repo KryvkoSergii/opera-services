@@ -4,7 +4,7 @@ import torch
 from efficientnet_pytorch import EfficientNet
 from torch.nn import functional as F
 import numpy as np
-from htsat.htsat import HTSATWrapper
+from .htsat.htsat import HTSATWrapper
 import random
 
 class Encoder(torch.nn.Module):

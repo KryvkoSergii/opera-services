@@ -2,22 +2,30 @@
 
 from models.models_cola import Cola
 from scipy.signal import butter, lfilter
+import torch
 import librosa
-import boto3
+import os
+import io
+import numpy as np
 
 ENCODER_PATH_OPERA_CE_EFFICIENTNET = "libs/encoder-operaCE.ckpt"
-ENCODER_PATH_OPERA_CT_HT_SAT = "models/encoder-operaCT.ckpt"
+ENCODER_PATH_OPERA_CT_HT_SAT = "libs/encoder-operaCT.ckpt"
 
-s3 = boto3.client("s3")
+
+class FileInS3:
+    def __init__(self, s3_client, bucket: str, key: str):
+        self.s3_client = s3_client
+        self.bucket = bucket
+        self.key = key
+
 
 """
 extract features using OPERA models
 """
-def extract_opera_feature(file_ref: FileInS3, pretrain: str = "operaCE", input_sec: int = 8, from_spec: bool = False,
-                          dim: int = 1280, pad0: bool = False):
 
-    device: str = "gpu" if torch.cuda.is_available() else "cpu"
 
+def extract_opera_feature(file_ref: FileInS3, device: str, pretrain: str = "operaCE", input_sec: int = 8,
+                          from_spec: bool = False, dim: int = 1280, pad0: bool = False):
     encoder_path: str = get_encoder_path(pretrain)
 
     ckpt = torch.load(encoder_path, map_location=torch.device(device))
@@ -32,7 +40,8 @@ def extract_opera_feature(file_ref: FileInS3, pretrain: str = "operaCE", input_s
     else:
         # input is filename of an audio
         if pad0:
-            data = get_entire_signal_librosa(file_ref, spectrogram=True, input_sec=input_sec, pad=True, types='zero')
+            data = get_entire_signal_librosa(file_ref, spectrogram=True, input_sec=input_sec, pad=True,
+                                             types='zero')
         else:
             data = get_entire_signal_librosa(file_ref, spectrogram=True, input_sec=input_sec, pad=True)
 
@@ -51,11 +60,14 @@ def extract_opera_feature(file_ref: FileInS3, pretrain: str = "operaCE", input_s
     print(x_data.shape)
     return x_data
 
+
 """
 load file content from AWS S3 with specified sample rate (also converts to mono)
 """
+
+
 def load_wav_from_s3_in_memory(file_ref: FileInS3, sample_rate: int):
-    obj = s3.get_object(Bucket=file_ref.bucket, Key=file_ref.key)
+    obj = file_ref.s3_client.get_object(Bucket=file_ref.bucket, Key=file_ref.key)
     wav_bytes = obj["Body"].read()
 
     bio = io.BytesIO(wav_bytes)
@@ -84,13 +96,14 @@ def initialize_pretrained_model(pretrain) -> Cola:
     return model
 
 
-def get_entire_signal_librosa(file_ref: FileInS3, input_sec: int = 8, sample_rate: int = 16000, butterworth_filter=None,
+def get_entire_signal_librosa(file_ref: FileInS3, input_sec: int = 8, sample_rate: int = 16000,
+                              butterworth_filter=None,
                               spectrogram: bool = False, pad: bool = False, from_cycle: bool = False, yt=None,
                               types='repeat'):
     if not from_cycle:
 
         # load file with specified sample rate (also converts to mono)
-        data, rate = load_wav_from_s3_in_memory(file_ref, sample_rate = sample_rate)
+        data, rate = load_wav_from_s3_in_memory(file_ref, sample_rate=sample_rate)
 
         if butterworth_filter:
             # butter bandpass filter
@@ -125,6 +138,7 @@ def get_entire_signal_librosa(file_ref: FileInS3, input_sec: int = 8, sample_rat
 
     return yt
 
+
 def _butter_bandpass(lowcut, highcut, fs, order=5):
     nyq = 0.5 * fs
     low = lowcut / nyq
@@ -133,11 +147,13 @@ def _butter_bandpass(lowcut, highcut, fs, order=5):
 
     return b, a
 
+
 def _butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
     b, a = _butter_bandpass(lowcut, highcut, fs, order=order)
     y = lfilter(b, a, data)
 
     return y
+
 
 def split_pad_sample(sample, desired_length, sample_rate, types='repeat'):
     """
@@ -162,12 +178,12 @@ def split_pad_sample(sample, desired_length, sample_rate, types='repeat'):
         """
         # frames[j] = x[j * hop_length : j * hop_length + frame_length]
         frames = librosa.util.frame(
-            soundclip, frame_length=output_length, hop_length=output_length//2, axis=0)
+            soundclip, frame_length=output_length, hop_length=output_length // 2, axis=0)
         for i in range(frames.shape[0]):
             output.append((frames[i], sample[1], sample[2]))
 
         # get the last sample
-        last_id = frames.shape[0] * (output_length//2)
+        last_id = frames.shape[0] * (output_length // 2)
         last_sample = soundclip[last_id:]
 
         padded = _duplicate_padding(
@@ -179,6 +195,7 @@ def split_pad_sample(sample, desired_length, sample_rate, types='repeat'):
         output.append((padded, sample[1], sample[2]))
 
     return output
+
 
 def _equally_slice_pad_sample(sample, desired_length, sample_rate):
     """
@@ -208,6 +225,7 @@ def _equally_slice_pad_sample(sample, desired_length, sample_rate):
 
     return output
 
+
 def _duplicate_padding(sample, source, output_length, sample_rate, types):
     # pad_type == 1 or 2
     copy = np.zeros(output_length, dtype=np.float32)
@@ -225,13 +243,14 @@ def _duplicate_padding(sample, source, output_length, sample_rate, types):
     if prob < 0.5:
         # pad the back part of original sample
         copy[left:] = source
-        copy[:left] = aug[len(aug)-left:]
+        copy[:left] = aug[len(aug) - left:]
     else:
         # pad the front part of original sample
         copy[:src_length] = source[:]
         copy[src_length:] = aug[:left]
 
     return copy
+
 
 def _zero_padding(source, output_length):
     copy = np.zeros(output_length, dtype=np.float32)
@@ -250,6 +269,7 @@ def _zero_padding(source, output_length):
 
     return copy
 
+
 def pre_process_audio_mel_t(audio, sample_rate=16000, n_mels=64, f_min=50, f_max=2000, nfft=1024, hop=512):
     S = librosa.feature.melspectrogram(
         y=audio, sr=sample_rate, n_mels=n_mels, fmin=f_min, fmax=f_max, n_fft=nfft, hop_length=hop)
@@ -262,8 +282,3 @@ def pre_process_audio_mel_t(audio, sample_rate=16000, n_mels=64, f_min=50, f_max
         print("warning in producing spectrogram!")
 
     return mel_db.T
-
-class FileInS3:
-    def __init__(self, bucket: str, key: str):
-        self.bucket = bucket
-        self.key = key
