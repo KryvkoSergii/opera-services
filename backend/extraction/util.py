@@ -18,12 +18,6 @@ class FileInS3:
         self.bucket = bucket
         self.key = key
 
-
-"""
-extract features using OPERA models
-"""
-
-
 def extract_opera_feature(file_ref: FileInS3, device: str, pretrain: str = "operaCE", input_sec: int = 8,
                           from_spec: bool = False, dim: int = 1280, pad0: bool = False):
     encoder_path: str = get_encoder_path(pretrain)

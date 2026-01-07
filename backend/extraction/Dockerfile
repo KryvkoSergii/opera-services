@@ -3,6 +3,8 @@ LABEL authors="Sergii_Kryvko"
 
 WORKDIR /app
 
+ENV PYTHONPATH=/app
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     libsndfile1 \

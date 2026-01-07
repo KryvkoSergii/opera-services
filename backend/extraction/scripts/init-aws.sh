@@ -15,6 +15,6 @@ echo "Infra initialized"
 
 aws --region "$REGION" --endpoint-url="$ENDPOINT" sqs send-message \
   --queue-url http://localhost:4566/000000000000/opera-queue \
-  --message-body '{"bucket":"input-bucket","key":"audio/breath.wav","requestId":"9aa0d17b-a638-4002-ac3c-7b4259b82b1f","pretrain":"operaCT","inputSec":8,"fromSpec":false}'
+  --message-body '{"bucket":"input-bucket","key":"audio/breath.wav","requestId":"9aa0d17b-a638-4002-ac3c-7b4259b82b1f", "source":"microphone"}'
 
 echo "Event initialized"
