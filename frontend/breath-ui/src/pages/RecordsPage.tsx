@@ -17,11 +17,13 @@ import StopIcon from "@mui/icons-material/Stop";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import SendIcon from "@mui/icons-material/Send";
 import { PageCard } from "../components/PageCard";
-import { JobStatus, StatusChip } from "../components/StatusChip";
+import { StatusChip, type JobStatus } from "../components/StatusChip";
+import { useTranslation } from "react-i18next";
 
 type SourceType = "MICROPHONE" | "STETHOSCOPE";
 
 export function RecordsPage() {
+    const { t } = useTranslation();
     const [source, setSource] = useState<SourceType>("MICROPHONE");
 
     // recording state
@@ -40,7 +42,7 @@ export function RecordsPage() {
     const selectedBlobInfo = useMemo(() => {
         if (pickedFile) return `File: ${pickedFile.name} (${Math.round(pickedFile.size / 1024)} KB)`;
         if (recordedBlob) return `Recorded audio (${Math.round(recordedBlob.size / 1024)} KB)`;
-        return "No audio selected yet.";
+        return t("records.noAudio");
     }, [pickedFile, recordedBlob]);
 
     useEffect(() => {
@@ -94,12 +96,12 @@ export function RecordsPage() {
         const hasAudio = !!pickedFile || !!recordedBlob;
         if (!hasAudio) {
             setStatus("FAILED");
-            setStatusText("Please record audio or select a file before sending.");
+            setStatusText(t("records.needAudio"));
             return;
         }
 
         setStatus("UPLOADING");
-        setStatusText("Uploading...");
+        setStatusText(t("records.uploading"));
 
         // TODO: build multipart and call backend
         // const form = new FormData();
@@ -109,36 +111,40 @@ export function RecordsPage() {
         await new Promise((r) => setTimeout(r, 800));
 
         setStatus("PROCESSING");
-        setStatusText("Processing...");
+        setStatusText(t("records.processing"));
 
         // TODO: poll/SSE status updates
         await new Promise((r) => setTimeout(r, 1200));
 
         setStatus("DONE");
-        setStatusText("Completed.");
+        setStatusText(t("records.completed"));
     };
 
     return (
         <PageCard
-            title="Records"
-            subtitle="Record from microphone or upload a file, then send for analysis"
+            title={t("records.title")}
+            subtitle={t("records.subtitle")}
         >
             <Stack spacing={2.5}>
                 <Alert severity="info">
-                    Tip: On mobile, grant microphone permission when prompted.
+                    {t("records.tip")}
+                </Alert>
+
+                <Alert severity="warning">
+                    {t("records.usageWarning")}
                 </Alert>
 
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems={{ sm: "center" }}>
                     <FormControl fullWidth>
-                        <InputLabel id="source-label">Source</InputLabel>
+                        <InputLabel id="source-label">{t("records.source")}</InputLabel>
                         <Select
                             labelId="source-label"
-                            label="Source"
+                            label={t("records.source")}
                             value={source}
                             onChange={(e) => setSource(e.target.value as SourceType)}
                         >
-                            <MenuItem value="MICROPHONE">Microphone</MenuItem>
-                            <MenuItem value="STETHOSCOPE">Stethoscope</MenuItem>
+                            <MenuItem value="MICROPHONE">{t("records.sourceMic")}</MenuItem>
+                            <MenuItem value="STETHOSCOPE">{t("records.sourceStetho")}</MenuItem>
                         </Select>
                     </FormControl>
 
@@ -150,7 +156,7 @@ export function RecordsPage() {
                                 startIcon={<MicIcon />}
                                 onClick={startRecording}
                             >
-                                Записати
+                                {t("records.record")}
                             </Button>
                         ) : (
                             <Button
@@ -159,7 +165,7 @@ export function RecordsPage() {
                                 startIcon={<StopIcon />}
                                 onClick={stopRecording}
                             >
-                                Stop
+                                {t("records.stop")}
                             </Button>
                         )}
                     </Stack>
@@ -169,7 +175,7 @@ export function RecordsPage() {
 
                 <Stack spacing={1}>
                     <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                        Upload file
+                        {t("records.uploadTitle")}
                     </Typography>
 
                     <Button
@@ -177,7 +183,7 @@ export function RecordsPage() {
                         variant="outlined"
                         startIcon={<UploadFileIcon />}
                     >
-                        Choose file
+                        {t("records.chooseFile")}
                         <input
                             hidden
                             type="file"
@@ -200,7 +206,7 @@ export function RecordsPage() {
                         onClick={send}
                         disabled={status === "UPLOADING" || status === "PROCESSING"}
                     >
-                        Відправити
+                        {t("records.send")}
                     </Button>
 
                     <Stack direction="row" spacing={1} alignItems="center">
