@@ -1,0 +1,107 @@
+openapi: 3.0.3
+info:
+  title: User API
+  version: 0.1.0
+  description: API for managing users.
+
+tags:
+  - name: User
+
+security:
+  - bearerAuth: [ ]
+
+paths:
+  /v1/users/register:
+    post:
+      tags: [ User ]
+      summary: Register a new user
+      description: >
+        Creates a new user account with the provided username and password.
+      operationId: registerUser
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRegisterRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserRegisterResponse"
+        "400":
+          $ref: "./general.yaml#/components/responses/BadRequest"
+        "409":
+          $ref: "./general.yaml#/components/responses/Conflict"
+
+  /v1/users/me:
+    get:
+      tags: [ User ]
+      summary: Get user details
+      description: >
+        Retrieves details for a current user.
+      operationId: getMeUserDetails
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: Unique identifier of the user
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserRegisterResponse"
+        "401":
+          $ref: "./general.yaml#/components/responses/Unauthorized"
+        "404":
+          $ref: "./general.yaml#/components/responses/NotFound"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    UserRegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        gender:
+          $ref: "./general.yaml#/components/schemas/Gender"
+        email:
+          type: string
+          description: Desired email for the new account
+        password:
+          type: string
+          format: password
+          description: Desired password for the new account
+
+    UserRegisterResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+          description: Unique identifier for the user
+        email:
+          type: string
+          description: email of the account
+        gender:
+          $ref: "./general.yaml#/components/schemas/Gender"
+        registeredAt:
+          type: string
+          format: date-time
+          description: Timestamp when the user was registered

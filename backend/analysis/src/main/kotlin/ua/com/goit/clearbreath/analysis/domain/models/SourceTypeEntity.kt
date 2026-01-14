@@ -1,4 +1,4 @@
-package ua.com.goit.clearbreath.domain.models
+package ua.com.goit.clearbreath.analysis.domain.models
 
 enum class SourceTypeEntity(val dbValue: String) {
     MICROPHONE("microphone"),

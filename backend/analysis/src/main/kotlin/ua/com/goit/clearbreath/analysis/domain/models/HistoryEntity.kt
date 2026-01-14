@@ -1,4 +1,4 @@
-package ua.com.goit.clearbreath.domain.models
+package ua.com.goit.clearbreath.analysis.domain.models
 
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.Id
@@ -12,8 +12,8 @@ import java.util.*
 data class HistoryEntity(
 
     @Id
-    @Column("id")
-    val id: UUID? = null,
+    @Column("request_id")
+    val requestId: UUID? = null,
 
     @Column("processing_status")
     val processingStatus: ProcessingStatusEntity,

@@ -1,13 +1,13 @@
-package ua.com.goit.clearbreath.controllers
+package ua.com.goit.clearbreath.analysis.controllers
 
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
-import ua.com.goit.clearbreath.api.AnalysisApi
-import ua.com.goit.clearbreath.domain.services.AnalysisService
-import ua.com.goit.clearbreath.model.AnalysisCreateResponse
-import ua.com.goit.clearbreath.model.SourceType
+import ua.com.goit.clearbreath.analysis.api.AnalysisApi
+import ua.com.goit.clearbreath.analysis.model.AnalysisCreateResponse
+import ua.com.goit.clearbreath.analysis.model.SourceType
+import ua.com.goit.clearbreath.analysis.domain.services.AnalysisService
 import java.nio.file.Files
 import java.nio.file.Paths
 
@@ -26,8 +26,7 @@ class AnalysisController(private val service: AnalysisService) : AnalysisApi {
         audioFile.transferTo(target)
 
         service.startAnalysis(audioFile, sourceType).block().let {
-            return ResponseEntity.status(HttpStatus.CREATED)
-                .body(it)
+            return ResponseEntity.status(HttpStatus.CREATED).body(it)
         }
     }
 

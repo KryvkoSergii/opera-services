@@ -1,3 +1,5 @@
+import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
+
 plugins {
     id 'org.jetbrains.kotlin.jvm' version '2.2.21'
     id 'org.jetbrains.kotlin.plugin.spring' version '2.2.21'
@@ -35,6 +37,8 @@ dependencies {
     implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
     implementation 'io.swagger.core.v3:swagger-annotations-jakarta:2.2.24'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation("org.mindrot:jbcrypt:0.4")
+
     testImplementation 'org.springframework.boot:spring-boot-starter-data-r2dbc-test'
     testImplementation 'org.jetbrains.kotlin:kotlin-test-junit5'
     testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test'
@@ -51,48 +55,105 @@ kotlin {
 }
 
 def repoRootDir = layout.projectDirectory.dir("../..")
-def openApiSpec = repoRootDir.file("contract/core-api.yaml")
 def openApiOut = layout.buildDirectory.dir("generated/openapi")
 
-
-openApiGenerate {
+tasks.register('openApiGenerateCore', GenerateTask) {
     generatorName = "kotlin-spring"
-    inputSpec = openApiSpec.asFile.absolutePath
-    outputDir = openApiOut.get().asFile.absolutePath
-
-    apiPackage = "ua.com.goit.clearbreath.api"
-    modelPackage = "ua.com.goit.clearbreath.model"
-    invokerPackage = "ua.com.goit.clearbreath.invoker"
-
-    globalProperties = [
-            apis  : "",
-            models: ""
-    ]
-
-    // ключові опції
+    inputSpec = repoRootDir.file("contract/core-api.yaml").asFile.absolutePath
+    outputDir = openApiOut.get().asFile.absolutePath + "/core"
+    apiPackage = "ua.com.goit.clearbreath.analysis.api"
+    modelPackage = "ua.com.goit.clearbreath.analysis.model"
+    invokerPackage = "ua.com.goit.clearbreath.analysis.invoker"
+    globalProperties = [apis: "", models: ""]
     configOptions = [
-            interfaceOnly       : "true",
-            useSpringBoot3      : "true",
-            reactive            : "false",
+            interfaceOnly: "true",
+            useSpringBoot3: "true",
+            reactive: "false",
             serializationLibrary: "jackson",
-            dateLibrary         : "java8",
-            enumPropertyNaming  : "UPPERCASE",
-            useTags             : "true"
+            dateLibrary: "java8",
+            enumPropertyNaming: "UPPERCASE",
+            useTags: "true"
     ]
-
     generateApiTests = false
     generateModelTests = false
     generateApiDocumentation = false
     generateModelDocumentation = false
+
+}
+
+tasks.register('openApiGenerateUser', GenerateTask) {
+    generatorName = "kotlin-spring"
+    inputSpec = repoRootDir.file("contract/user-api.yaml").asFile.absolutePath
+    outputDir = openApiOut.get().asFile.absolutePath + "/user"
+    apiPackage = "ua.com.goit.clearbreath.analysis.api"
+    modelPackage = "ua.com.goit.clearbreath.analysis.model"
+    invokerPackage = "ua.com.goit.clearbreath.analysis.invoker"
+    globalProperties = [apis: "", models: ""]
+    configOptions = [
+            interfaceOnly: "true",
+            useSpringBoot3: "true",
+            reactive: "false",
+            serializationLibrary: "jackson",
+            dateLibrary: "java8",
+            enumPropertyNaming: "UPPERCASE",
+            useTags: "true"
+    ]
+    generateApiTests = false
+    generateModelTests = false
+    generateApiDocumentation = false
+    generateModelDocumentation = false
+
+    importMappings = [
+            "ErrorResponse": "ua.com.goit.clearbreath.model.ErrorResponse",
+    ]
+
+    typeMappings = [
+            "ErrorResponse": "ua.com.goit.clearbreath.model.ErrorResponse",
+    ]
+}
+
+tasks.register('openApiGenerateAuth', GenerateTask) {
+    generatorName = "kotlin-spring"
+    inputSpec = repoRootDir.file("contract/auth-api.yaml").asFile.absolutePath
+    outputDir = openApiOut.get().asFile.absolutePath + "/auth"
+    apiPackage = "ua.com.goit.clearbreath.analysis.api"
+    modelPackage = "ua.com.goit.clearbreath.analysis.model"
+    invokerPackage = "ua.com.goit.clearbreath.analysis.invoker"
+    globalProperties = [apis: "", models: ""]
+    configOptions = [
+            interfaceOnly: "true",
+            useSpringBoot3: "true",
+            reactive: "false",
+            serializationLibrary: "jackson",
+            dateLibrary: "java8",
+            enumPropertyNaming: "UPPERCASE",
+            useTags: "true"
+    ]
+    generateApiTests = false
+    generateModelTests = false
+    generateApiDocumentation = false
+    generateModelDocumentation = false
+
+    importMappings = [
+            "ErrorResponse": "ua.com.goit.clearbreath.model.ErrorResponse",
+    ]
+
+    typeMappings = [
+            "ErrorResponse": "ua.com.goit.clearbreath.model.ErrorResponse",
+    ]
 }
 
 tasks.configureEach {
     if (name.contains("Kotlin") || name.startsWith("kapt")) {
-        dependsOn("openApiGenerate")
+        dependsOn("openApiGenerateCore" , "openApiGenerateUser", "openApiGenerateAuth")
     }
 }
 
-sourceSets.main.kotlin.srcDirs += openApiOut.map { it.dir("src/main/kotlin") }.get().asFile
+sourceSets.main.kotlin.srcDirs += [
+        openApiOut.map { it.dir("core/src/main/kotlin") }.get().asFile,
+        openApiOut.map { it.dir("user/src/main/kotlin") }.get().asFile,
+        openApiOut.map { it.dir("auth/src/main/kotlin") }.get().asFile
+]
 
 tasks.named('test') {
     useJUnitPlatform()

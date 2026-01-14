@@ -1,10 +1,9 @@
-package ua.com.goit.clearbreath.domain.mapper
+package ua.com.goit.clearbreath.analysis.domain.mapper
 
 import org.mapstruct.Mapper
 import org.springframework.stereotype.Component
-import ua.com.goit.clearbreath.domain.models.SourceTypeEntity
-import ua.com.goit.clearbreath.model.RequestStatus
-import ua.com.goit.clearbreath.model.SourceType
+import ua.com.goit.clearbreath.analysis.domain.models.SourceTypeEntity
+import ua.com.goit.clearbreath.analysis.model.SourceType
 
 @Component
 @Mapper(componentModel = "spring")

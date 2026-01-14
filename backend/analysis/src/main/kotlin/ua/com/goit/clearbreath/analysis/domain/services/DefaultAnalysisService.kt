@@ -1,17 +1,15 @@
-package ua.com.goit.clearbreath.domain.services
+package ua.com.goit.clearbreath.analysis.domain.services
 
-import kotlinx.coroutines.reactor.awaitSingle
-import org.springframework.http.codec.multipart.FilePart
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import reactor.core.publisher.Mono
-import ua.com.goit.clearbreath.domain.mapper.ProcessingStatusMapper
-import ua.com.goit.clearbreath.domain.mapper.SourceTypeMapper
-import ua.com.goit.clearbreath.domain.models.HistoryEntity
-import ua.com.goit.clearbreath.domain.models.ProcessingStatusEntity
-import ua.com.goit.clearbreath.domain.repositories.HistoryRepository
-import ua.com.goit.clearbreath.model.AnalysisCreateResponse
-import ua.com.goit.clearbreath.model.SourceType
+import ua.com.goit.clearbreath.analysis.domain.mapper.ProcessingStatusMapper
+import ua.com.goit.clearbreath.analysis.domain.mapper.SourceTypeMapper
+import ua.com.goit.clearbreath.analysis.domain.models.HistoryEntity
+import ua.com.goit.clearbreath.analysis.domain.models.ProcessingStatusEntity
+import ua.com.goit.clearbreath.analysis.domain.repositories.HistoryRepository
+import ua.com.goit.clearbreath.analysis.model.AnalysisCreateResponse
+import ua.com.goit.clearbreath.analysis.model.SourceType
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.*
@@ -29,7 +27,7 @@ class DefaultAnalysisService(
     ): Mono<AnalysisCreateResponse> {
         //create new analysis request
         val request = HistoryEntity(
-            processingStatus = ProcessingStatusEntity.IN_PROGRESS,
+            processingStatus = ProcessingStatusEntity.NEW,
             sourceType = sourceTypeMapper.toEntity(sourceType),
             user = UUID.randomUUID()
         )
@@ -38,7 +36,7 @@ class DefaultAnalysisService(
         return repository.save(request)
             .map { i ->
                 AnalysisCreateResponse(
-                    i.id.toString(),
+                    i.requestId.toString(),
                     statusMapper.toDto(i.processingStatus),
                     OffsetDateTime.of(i.createdAt, ZoneOffset.UTC)
                 )

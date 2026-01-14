@@ -1,4 +1,4 @@
-package ua.com.goit.clearbreath
+package ua.com.goit.clearbreath.analysis
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
@@ -7,5 +7,5 @@ import org.springframework.boot.runApplication
 class AnalysisApplication
 
 fun main(args: Array<String>) {
-	runApplication<AnalysisApplication>(*args)
+	runApplication<ua.com.goit.clearbreath.analysis.AnalysisApplication>(*args)
 }

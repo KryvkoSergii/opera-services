@@ -1,0 +1,102 @@
+openapi: 3.0.3
+info:
+  title: general models
+  version: 0.1.0
+  description: general models
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            badRequest:
+              value:
+                message: "Invalid payload."
+    Unauthorized:
+      description: Missing or invalid Authorization header
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            unauthorized:
+              value:
+                message: "Authorization token is missing or invalid."
+    NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            unauthorized:
+              value:
+                message: "Not found."
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            unauthorized:
+              value:
+                message: "User already exists."
+    UnsupportedMediaType:
+      description: Unsupported Media Type
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            unauthorized:
+              value:
+                message: "Authorization token is missing or invalid."
+    ServerError:
+      description: Server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            serverError:
+              value:
+                message: "Unexpected error."
+
+  schemas:
+    SourceType:
+      type: string
+      enum: [ microphone, stethoscope ]
+      description: Type of recorded sound
+
+    RequestStatus:
+      type: string
+      enum: [ NEW, UPLOADING, PROCESSING, DONE, FAILED ]
+      description: Status of the analysis request
+
+    ProbabilityStatus:
+      type: string
+      enum:
+        - high
+        - moderate
+        - low
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+
+    Gender:
+      type: string
+      enum: [male, female]

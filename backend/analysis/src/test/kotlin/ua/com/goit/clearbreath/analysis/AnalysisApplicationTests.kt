@@ -1,4 +1,4 @@
-package ua.com.goit.clearbreath
+package ua.com.goit.clearbreath.analysis
 
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest

@@ -29,7 +29,7 @@ paths:
           required: true
           description: Type of recorded sound
           schema:
-            $ref: "#/components/schemas/SourceType"
+            $ref: "./general.yaml#/components/schemas/SourceType"
       requestBody:
         required: true
         content:
@@ -53,17 +53,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/AnalysisCreateResponse"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "./general.yaml#/components/responses/BadRequest"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "./general.yaml#/components/responses/Unauthorized"
         "415":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-          description: Unsupported Media Type
+          $ref: "./general.yaml#/components/responses/UnsupportedMediaType"
         "500":
-          $ref: "#/components/responses/ServerError"
+          $ref: "./general.yaml#/components/responses/ServerError"
 
     get:
       tags: [ History ]
@@ -94,32 +90,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PaginatedRequestHistory"
-              examples:
-                page1:
-                  value:
-                    total: 124
-                    page: 1
-                    perPage: 20
-                    items:
-                      - requestId: "req_01HAAAAAAA111"
-                        requested: "2025-12-29T19:00:00Z"
-                        type: "breath"
-                        recommendation: "Visit a healthcare professional."
-                        status: "FINISHED"
-                        details:
-                          - model: "X1"
-                            details: "Pattern suggests mild obstruction."
-                            status: "moderate probability"
-                      - requestId: "req_01HBBBBBBB222"
-                        requested: "2025-12-29T19:30:00Z"
-                        type: "cough"
-                        recomendation: null
-                        status: "IN_PROGRESS"
-                        details: [ ]
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "./general.yaml#/components/responses/Unauthorized"
         "500":
-          $ref: "#/components/responses/ServerError"
+          $ref: "./general.yaml#/components/responses/ServerError"
 
   /v1/analyses/{requestId}/events:
     get:
@@ -153,11 +127,11 @@ paths:
                     event: status
                     data: {"requestId":"req_01HAAAAAAA111","status":"FINISHED","timestamp":"2025-12-29T20:13:45Z"}
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "./general.yaml#/components/responses/Unauthorized"
         "404":
-          description: Request not found
+          $ref: "./general.yaml#/components/responses/NotFound"
         "500":
-          $ref: "#/components/responses/ServerError"
+          $ref: "./general.yaml#/components/responses/ServerError"
 
 components:
   securitySchemes:
@@ -166,67 +140,14 @@ components:
       scheme: bearer
       bearerFormat: JWT
 
-  responses:
-    BadRequest:
-      description: Bad request
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/ErrorResponse"
-          examples:
-            badRequest:
-              value:
-                code: "BAD_REQUEST"
-                message: "Invalid payload."
-    Unauthorized:
-      description: Missing or invalid Authorization header
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/ErrorResponse"
-          examples:
-            unauthorized:
-              value:
-                code: "UNAUTHORIZED"
-                message: "Authorization token is missing or invalid."
-    ServerError:
-      description: Server error
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/ErrorResponse"
-          examples:
-            serverError:
-              value:
-                code: "INTERNAL_ERROR"
-                message: "Unexpected error."
-
   schemas:
-    SourceType:
-      type: string
-      enum: [ microphone, stethoscope ]
-      description: Type of recorded sound
-
-    RequestStatus:
-      type: string
-      enum: [ IN_PROGRESS, FINISHED, FAILED ]
-
-    ProbabilityStatus:
-      type: string
-      enum:
-        - high
-        - moderate
-        - low
-
     AnalysisCreateMeta:
       type: object
       required: [ type ]
       properties:
         type:
-          $ref: "#/components/schemas/SourceType"
+          $ref: "./general.yaml#/components/schemas/SourceType"
       additionalProperties: false
-      example:
-        type: microphone
 
     AnalysisCreateResponse:
       type: object
@@ -235,14 +156,10 @@ components:
         requestId:
           type: string
         status:
-          $ref: "#/components/schemas/RequestStatus"
+          $ref: "./general.yaml#/components/schemas/RequestStatus"
         requested:
           type: string
           format: date-time
-      example:
-        requestId: "req_01HAAAAAAA111"
-        status: "IN_PROGRESS"
-        requested: "2025-12-29T19:00:00Z"
 
     ModelDetail:
       type: object
@@ -255,7 +172,7 @@ components:
           type: string
           description: descriptive details from the model
         status:
-          $ref: "#/components/schemas/ProbabilityStatus"
+          $ref: "./general.yaml#/components/schemas/ProbabilityStatus"
 
     HistoryItem:
       type: object
@@ -267,11 +184,11 @@ components:
           type: string
           format: date-time
         type:
-          $ref: "#/components/schemas/SourceType"
+          $ref: "./general.yaml#/components/schemas/SourceType"
         recommendation:
           type: string
         status:
-          $ref: "#/components/schemas/RequestStatus"
+          $ref: "./general.yaml#/components/schemas/RequestStatus"
         details:
           type: array
           items:
@@ -294,12 +211,3 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/HistoryItem"
-
-    ErrorResponse:
-      type: object
-      required: [ code, message ]
-      properties:
-        code:
-          type: string
-        message:
-          type: string

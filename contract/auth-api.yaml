@@ -1,0 +1,57 @@
+openapi: 3.0.3
+info:
+  title: Authentication API
+  version: 0.1.0
+  description: API for Auth.
+
+tags:
+  - name: Authentication
+
+paths:
+  /v1/auth/login:
+    post:
+      tags: [ Authentication ]
+      summary: Login user
+      description: >
+        Authenticates a user and returns a JWT token.
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserLoginRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "400":
+          $ref: "./general.yaml#/components/responses/BadRequest"
+        "409":
+          $ref: "./general.yaml#/components/responses/Conflict"
+
+components:
+  schemas:
+    UserLoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          description: Email for the existing account
+        password:
+          type: string
+          format: password
+          description: Password for the existing account
+
+    TokenResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: Unique identifier for the user session
