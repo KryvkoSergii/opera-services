@@ -6,8 +6,11 @@ import ua.com.goit.clearbreath.analysis.domain.models.GenderEntity
 import ua.com.goit.clearbreath.analysis.model.Gender
 
 @Component
-@Mapper(componentModel = "spring")
-interface GenderMapper {
-    fun toDto(gender: GenderEntity): Gender = Gender.forValue(gender.name)
-    fun toEntity(gender: Gender): GenderEntity = GenderEntity.(gender.name)
+class GenderMapper {
+
+    fun toDto(gender: GenderEntity?): Gender? =
+        gender?.name?.let { Gender.valueOf(it) }
+
+    fun toEntity(gender: Gender?): GenderEntity? =
+        gender?.name?.let { GenderEntity.valueOf(it) }
 }

@@ -7,21 +7,23 @@ import ua.com.goit.clearbreath.analysis.domain.mapper.UserMapper
 import ua.com.goit.clearbreath.analysis.domain.services.UserService
 import ua.com.goit.clearbreath.analysis.model.UserRegisterRequest
 import ua.com.goit.clearbreath.analysis.model.UserRegisterResponse
-import ua.com.goit.clearbreath.analysis.utils.Constants
 
 @RestController
 class UserController(private val userService: UserService, private val userMapper: UserMapper) : UserApi {
 
-    override fun registerUser(userRegisterRequest: UserRegisterRequest): ResponseEntity<UserRegisterResponse> {
+    override suspend fun registerUser(userRegisterRequest: UserRegisterRequest): ResponseEntity<UserRegisterResponse> {
 
-        val response = userService.createUser(userRegisterRequest.email,
+        val user = userService.createUser(userRegisterRequest.email,
             userRegisterRequest.password,
             userRegisterRequest.gender)
 
-        val user = response.block(Constants.DURATION)
-        val mapped = user?.let { userMapper.toRegResponse(it) }
+        val mapped = user.let { userMapper.toRegResponse(it) }
 
         return mapped.let { ResponseEntity.ok(it) }
+    }
+
+    override suspend fun getMeUserDetails(): ResponseEntity<UserRegisterResponse> {
+        return super.getMeUserDetails()
     }
 }
 

@@ -4,6 +4,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import ua.com.goit.clearbreath.analysis.domain.exceptions.UserExistsException
+import ua.com.goit.clearbreath.analysis.model.ErrorResponse
 
 @ControllerAdvice
 class ErrorHandler {

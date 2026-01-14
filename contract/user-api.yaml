@@ -47,13 +47,6 @@ paths:
       operationId: getMeUserDetails
       security:
         - bearerAuth: [ ]
-      parameters:
-        - name: userId
-          in: path
-          required: true
-          description: Unique identifier of the user
-          schema:
-            type: string
       responses:
         "200":
           description: OK
@@ -95,6 +88,7 @@ components:
       properties:
         userId:
           type: string
+          format: uuid
           description: Unique identifier for the user
         email:
           type: string

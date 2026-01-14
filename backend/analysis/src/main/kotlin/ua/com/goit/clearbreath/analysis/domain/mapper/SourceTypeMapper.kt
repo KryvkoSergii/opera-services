@@ -6,8 +6,7 @@ import ua.com.goit.clearbreath.analysis.domain.models.SourceTypeEntity
 import ua.com.goit.clearbreath.analysis.model.SourceType
 
 @Component
-@Mapper(componentModel = "spring")
-interface SourceTypeMapper {
-    fun toEntity(type: SourceType): SourceTypeEntity
-    fun toDto(type: SourceTypeEntity): SourceType
+class SourceTypeMapper {
+    fun toEntity(type: SourceType): SourceTypeEntity = SourceTypeEntity.valueOf(type.name)
+    fun toDto(type: SourceTypeEntity): SourceType = SourceType.valueOf(type.name)
 }

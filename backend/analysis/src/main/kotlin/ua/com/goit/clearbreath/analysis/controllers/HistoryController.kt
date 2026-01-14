@@ -9,7 +9,7 @@ import ua.com.goit.clearbreath.analysis.model.PaginatedRequestHistory
 @RestController
 class HistoryController : HistoryApi {
 
-    override fun listAnalysisRequests(
+    override suspend fun listAnalysisRequests(
         page: Int,
         perPage: Int
     ): ResponseEntity<PaginatedRequestHistory> {

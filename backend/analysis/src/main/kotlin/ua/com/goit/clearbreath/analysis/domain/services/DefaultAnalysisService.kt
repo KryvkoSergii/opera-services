@@ -1,5 +1,6 @@
 package ua.com.goit.clearbreath.analysis.domain.services
 
+import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import reactor.core.publisher.Mono
@@ -21,10 +22,9 @@ class DefaultAnalysisService(
     private val sourceTypeMapper: SourceTypeMapper
 ) : AnalysisService {
 
-    override fun startAnalysis(
-        file: MultipartFile,
+    override suspend fun startAnalysis(
         sourceType: SourceType
-    ): Mono<AnalysisCreateResponse> {
+    ): AnalysisCreateResponse {
         //create new analysis request
         val request = HistoryEntity(
             processingStatus = ProcessingStatusEntity.NEW,
@@ -40,6 +40,6 @@ class DefaultAnalysisService(
                     statusMapper.toDto(i.processingStatus),
                     OffsetDateTime.of(i.createdAt, ZoneOffset.UTC)
                 )
-            }
+            }.awaitSingle()
     }
 }

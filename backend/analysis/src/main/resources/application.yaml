@@ -1,4 +1,6 @@
 spring:
+  jmx:
+    enabled: false
   application:
     name: analysis
   r2dbc:
@@ -16,4 +18,7 @@ spring:
       enabled: true
       max-file-size: 5MB
       max-request-size: 6MB
+auth:
+  issuer: clear-breath
+  secret: 53ed5613c4834c46a9c6da05a5bcb738
 
