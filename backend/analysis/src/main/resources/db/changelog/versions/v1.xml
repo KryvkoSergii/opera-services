@@ -62,4 +62,100 @@
             </column>
         </createTable>
     </changeSet>
+
+    <changeSet id="003-history-details-table" author="sergii.kryvko">
+
+        <createTable tableName="history_processing_item">
+            <column name="item_id" type="uuid" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="request_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="file_location" type="varchar(255)"/>
+
+            <column name="processing_status" type="varchar(20)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_at" type="timestamptz" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+
+        </createTable>
+
+        <createTable tableName="history_item_result">
+            <column name="result_id" type="uuid" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="item_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="request_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="model_name" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="diagnose" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="probability" type="decimal">
+                <constraints nullable="false"/>
+            </column>
+
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="history_processing_item"
+                                 baseColumnNames="request_id"
+                                 constraintName="fk_history_processing_item_request"
+                                 referencedTableName="history"
+                                 referencedColumnNames="request_id"
+                                 onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint baseTableName="history_item_result"
+                                 baseColumnNames="item_id"
+                                 constraintName="fk_history_item_result_item"
+                                 referencedTableName="history_processing_item"
+                                 referencedColumnNames="item_id"
+                                 onDelete="CASCADE"/>
+
+    </changeSet>
+
+    <changeSet id="004-models-metadata" author="sergii.kryvko">
+        <createTable tableName="evaluation_model_metadata">
+            <column name="model_id" type="uuid" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="model_name" type="varchar(100)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+
+            <column name="diagnose" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="experimental_relevance" type="decimal">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="description" type="varchar(255)"/>
+        </createTable>
+
+        <sql>
+            INSERT INTO models_metadata (model_name, diagnose, experimental_relevance, description)
+            VALUES ('COVID_COUGH_OperaCT_768', 'COVID19', 0.57, 'Defines probability of COVID-19'),
+                   ('COVIDUK_COUGH_OperaCT_768', 'COVID19', 0.70, 'Defines probability of COVID-19'),
+                   ('ICBHI_DISEASE_OperaCT_768', 'COPD', 0.85,
+                    'Defines probability of Chronic Obstructive Pulmonary Disease'),
+        </sql>
+    </changeSet>
 </databaseChangeLog>

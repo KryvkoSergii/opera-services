@@ -20,7 +20,7 @@ class CovidCough2(LinearOperaClassifier):
         return "operaCT_768"
 
     def task(self) -> str:
-        return "OPERA T5"
+        return "COVIDUK_COUGH_OperaCT_768"
 
     def requires_preprocessor(self) -> bool:
         return True

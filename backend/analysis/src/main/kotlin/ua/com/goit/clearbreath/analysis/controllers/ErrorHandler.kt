@@ -26,6 +26,4 @@ class ErrorHandler {
         return ResponseEntity.status(400).body(ErrorResponse(ex.message ?: "Bad Request"))
     }
 
-
-
 }

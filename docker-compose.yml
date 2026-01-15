@@ -35,10 +35,41 @@ services:
       - localstack
       - aws-init
     environment:
+      - AWS_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_ENDPOINT_URL=http://localstack:4566
+      - QUEUE_URL=http://localstack:4566/000000000000/opera-queue
+      - RESULTS_BUCKET=results-bucket
+    command: ["python", "-m", "main"]
+
+  database:
+    container_name: analysis-database
+    image: postgres:13.23
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./docker/postgres/data:/var/lib/postgresql/data
+
+  analyzer:
+    container_name: analyzer
+    build: ./backend/analysis
+    depends_on:
+      - database
+      - localstack
+      - aws-init
+    environment:
       - AWS_REGION=eu-central-1
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
       - AWS_ENDPOINT_URL=http://localstack:4566
-      - QUEUE_URL=http://localstack:4566/000000000000/opera-queue
+      - QUEUE_URL=http://localstack:4566/000000000000/analysis-queue
       - RESULTS_BUCKET=results-bucket
+      - DB_URL=r2dbc:postgresql://db:5432/${DB_NAME}
+      - DB_USERNAME=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
     command: ["python", "-m", "main"]

@@ -165,9 +165,9 @@ components:
       type: object
       required: [ model, details, status ]
       properties:
-        model:
+        disease:
           type: string
-          description: Model name/version (e.g., X1)
+          description: Disease name (e.g., "COVID-19")
         details:
           type: string
           description: descriptive details from the model

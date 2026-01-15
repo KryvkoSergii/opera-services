@@ -1,9 +1,6 @@
 package ua.com.goit.clearbreath.analysis.controllers
 
 import jakarta.validation.Valid
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.reactor.awaitSingle
-import kotlinx.coroutines.withContext
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.http.codec.multipart.FilePart
@@ -12,8 +9,6 @@ import ua.com.goit.clearbreath.analysis.api.AnalysisApi.Companion.PATH_CREATE_AN
 import ua.com.goit.clearbreath.analysis.domain.services.AnalysisService
 import ua.com.goit.clearbreath.analysis.model.AnalysisCreateResponse
 import ua.com.goit.clearbreath.analysis.model.SourceType
-import java.nio.file.Files
-import java.nio.file.Paths
 
 @RestController
 class AnalysisController(private val service: AnalysisService) {
@@ -29,22 +24,19 @@ class AnalysisController(private val service: AnalysisService) {
         sourceType: SourceType,
         @Valid @RequestPart("audio-file", required = true)
         audioFile: FilePart
-    ):
-            ResponseEntity<AnalysisCreateResponse> {
-        val baseDir = Paths.get("").toAbsolutePath()
-        val uploadDir = baseDir.resolve("tmp")
-        withContext(Dispatchers.IO) {
-            Files.createDirectories(uploadDir)
-        }
+    ): ResponseEntity<AnalysisCreateResponse> {
 
-        val fileName = audioFile.filename() ?: "audio.wav"
-        val target = uploadDir.resolve(fileName).toFile()
+        val fileDesc = AnalysisService.FileDesc(getExtension(audioFile.filename()),
+            audioFile.headers().contentType.toString(),
+            audioFile.content())
 
-        audioFile.transferTo(target)
-
-        service.startAnalysis(sourceType).let {
+        service.startAnalysis(fileDesc, sourceType).let {
             return ResponseEntity.status(HttpStatus.CREATED).body(it)
         }
+    }
+
+    private fun getExtension(filename: String): String {
+        return filename.substringAfterLast('.', "").lowercase()
     }
 
 }

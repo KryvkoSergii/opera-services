@@ -1,6 +1,7 @@
 package ua.com.goit.clearbreath.analysis.domain.services
 
 import kotlinx.coroutines.reactor.awaitSingle
+import org.springframework.security.core.context.ReactiveSecurityContextHolder
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import ua.com.goit.clearbreath.analysis.domain.exceptions.UserExistsException
@@ -44,4 +45,12 @@ class DefaultUserService(
                 }
             }.awaitSingle()
     }
+
+    override suspend fun getCurrentUser(): UserEntity {
+        return ReactiveSecurityContextHolder.getContext()
+            .map { it.authentication.principal as UserEntity }
+            .awaitSingle()
+    }
+
+
 }

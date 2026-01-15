@@ -9,6 +9,7 @@ import ua.com.goit.clearbreath.analysis.domain.mapper.SourceTypeMapper
 import ua.com.goit.clearbreath.analysis.domain.models.HistoryEntity
 import ua.com.goit.clearbreath.analysis.domain.models.ProcessingStatusEntity
 import ua.com.goit.clearbreath.analysis.domain.repositories.HistoryRepository
+import ua.com.goit.clearbreath.analysis.domain.repositories.StorageRepository
 import ua.com.goit.clearbreath.analysis.model.AnalysisCreateResponse
 import ua.com.goit.clearbreath.analysis.model.SourceType
 import java.time.OffsetDateTime
@@ -19,20 +20,33 @@ import java.util.*
 class DefaultAnalysisService(
     private val repository: HistoryRepository,
     private val statusMapper: ProcessingStatusMapper,
-    private val sourceTypeMapper: SourceTypeMapper
+    private val sourceTypeMapper: SourceTypeMapper,
+    private val storageRepository: StorageRepository
 ) : AnalysisService {
 
     override suspend fun startAnalysis(
+        fileDesc: AnalysisService.FileDesc,
         sourceType: SourceType
     ): AnalysisCreateResponse {
-        //create new analysis request
+
+        val requestId = UUID.randomUUID()
+
         val request = HistoryEntity(
+            requestId = requestId,
             processingStatus = ProcessingStatusEntity.NEW,
             sourceType = sourceTypeMapper.toEntity(sourceType),
             user = UUID.randomUUID()
         )
 
-        //save to DB and return response
+        repository.save(request)
+
+
+        storageRepository.saveOriginalFile(requestId, fileDesc.extension, fileDesc.fileContent)
+        //save to S3 original file
+        //backet/original/request-id
+        //preprocess file ????
+
+
         return repository.save(request)
             .map { i ->
                 AnalysisCreateResponse(

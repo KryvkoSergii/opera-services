@@ -14,7 +14,7 @@ interface HistoryRepository : ReactiveCrudRepository<HistoryEntity, UUID> {
 
     @Query(
         """
-        SELECT id, processing_status, created_at, source_type, recommendation
+        SELECT id, processing_status, source_type, recommendation, created_at, updated_at, user_id
         FROM history
         WHERE user_id = :userId
         ORDER BY created_at DESC
