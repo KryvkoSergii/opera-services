@@ -35,7 +35,13 @@ export function HistoryPage() {
     const nav = useNavigate();
 
     // TODO: fetch from API
-    const rows: Row[] = []; // <- щоб побачити empty state, залиш порожнім
+    const rows: Row[] = [
+        {sentAt: "2026-01-01", status: "DONE", diagnosis:"Warning", recommendation: "Need to visit doctor"},
+        {sentAt: "2026-01-01", status: "DONE", diagnosis:"Critical", recommendation: "Need to visit doctor ASAP"},
+        {sentAt: "2026-01-01", status: "DONE", diagnosis:"...", recommendation: "Looks good"},
+        {sentAt: "2026-01-01", status: "PROCESSING", diagnosis:"?", recommendation: "Please await"},
+
+    ]; // <- щоб побачити empty state, залиш порожнім
 
     if (rows.length === 0) {
         return (

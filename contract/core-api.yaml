@@ -30,6 +30,14 @@ paths:
           description: Type of recorded sound
           schema:
             $ref: "./general.yaml#/components/schemas/SourceType"
+        - name: X-Timezone
+          in: header
+          required: false
+          description: >
+            IANA timezone name (e.g., "America/New_York").
+            Used to localize timestamps in responses.
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -83,6 +91,14 @@ paths:
             minimum: 1
             maximum: 200
             default: 10
+        - name: X-Timezone
+          in: header
+          required: false
+          description: >
+            IANA timezone name (e.g., "America/New_York").
+            Used to localize timestamps in responses.
+          schema:
+            type: string
       responses:
         "200":
           description: Paginated list of requests
@@ -109,6 +125,14 @@ paths:
         - name: requestId
           in: path
           required: true
+          schema:
+            type: string
+        - name: X-Timezone
+          in: header
+          required: false
+          description: >
+            IANA timezone name (e.g., "America/New_York").
+            Used to localize timestamps in responses.
           schema:
             type: string
       responses:
@@ -173,6 +197,12 @@ components:
           description: descriptive details from the model
         status:
           $ref: "./general.yaml#/components/schemas/ProbabilityStatus"
+        probability:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: Probability score between 0.0 and 1.0
 
     HistoryItem:
       type: object

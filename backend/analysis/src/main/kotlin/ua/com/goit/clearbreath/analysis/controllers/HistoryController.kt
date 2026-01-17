@@ -11,7 +11,8 @@ class HistoryController : HistoryApi {
 
     override suspend fun listAnalysisRequests(
         page: Int,
-        perPage: Int
+        perPage: Int,
+        xTimezone: kotlin.String?
     ): ResponseEntity<PaginatedRequestHistory> {
 
 

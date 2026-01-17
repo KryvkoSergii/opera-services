@@ -2,58 +2,71 @@ package ua.com.goit.clearbreath.analysis.domain.services
 
 import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.stereotype.Service
-import org.springframework.web.multipart.MultipartFile
-import reactor.core.publisher.Mono
-import ua.com.goit.clearbreath.analysis.domain.mapper.ProcessingStatusMapper
-import ua.com.goit.clearbreath.analysis.domain.mapper.SourceTypeMapper
 import ua.com.goit.clearbreath.analysis.domain.models.HistoryEntity
 import ua.com.goit.clearbreath.analysis.domain.models.ProcessingStatusEntity
+import ua.com.goit.clearbreath.analysis.domain.models.SourceTypeEntity
 import ua.com.goit.clearbreath.analysis.domain.repositories.HistoryRepository
 import ua.com.goit.clearbreath.analysis.domain.repositories.StorageRepository
-import ua.com.goit.clearbreath.analysis.model.AnalysisCreateResponse
-import ua.com.goit.clearbreath.analysis.model.SourceType
-import java.time.OffsetDateTime
-import java.time.ZoneOffset
-import java.util.*
+import ua.com.goit.clearbreath.analysis.tasks.ConvertFileEvent
+import ua.com.goit.clearbreath.analysis.tasks.EventProducer
+import ua.com.goit.clearbreath.analysis.utils.DiskUtil
+import java.nio.file.Path
 
 @Service
 class DefaultAnalysisService(
     private val repository: HistoryRepository,
-    private val statusMapper: ProcessingStatusMapper,
-    private val sourceTypeMapper: SourceTypeMapper,
-    private val storageRepository: StorageRepository
+    private val storageRepository: StorageRepository?,
+    private val userService: UserService,
+    private val eventProducer: EventProducer
 ) : AnalysisService {
 
     override suspend fun startAnalysis(
         fileDesc: AnalysisService.FileDesc,
-        sourceType: SourceType
-    ): AnalysisCreateResponse {
+        sourceType: SourceTypeEntity
+    ): HistoryEntity {
 
-        val requestId = UUID.randomUUID()
+        val userId = userService.getCurrentUser().userId
+            ?: throw IllegalStateException("User ID is null")
 
-        val request = HistoryEntity(
-            requestId = requestId,
-            processingStatus = ProcessingStatusEntity.NEW,
-            sourceType = sourceTypeMapper.toEntity(sourceType),
-            user = UUID.randomUUID()
-        )
+        //TODO switch to outbox pattern to ensure event delivery
+        val saved = repository.save(
+            HistoryEntity(
+                processingStatus = ProcessingStatusEntity.NEW,
+                sourceType = sourceType,
+                user = userId
+            )
+        ).awaitSingle()
 
-        repository.save(request)
+        val requestId = saved.requestId ?: throw IllegalStateException("Request ID is null")
 
+        try {
 
-        storageRepository.saveOriginalFile(requestId, fileDesc.extension, fileDesc.fileContent)
-        //save to S3 original file
-        //backet/original/request-id
-        //preprocess file ????
+            val fileName = "$requestId.${fileDesc.extension}"
 
+            val onLocalDisk: Path =
+                DiskUtil.saveOriginalToTempDirectoryOnDisk(fileDesc.fileContent, fileName).awaitSingle()
 
-        return repository.save(request)
-            .map { i ->
-                AnalysisCreateResponse(
-                    i.requestId.toString(),
-                    statusMapper.toDto(i.processingStatus),
-                    OffsetDateTime.of(i.createdAt, ZoneOffset.UTC)
+//            val fileRef = storageRepository.saveOriginalFileToRemote(onLocalDisk)
+//                .awaitSingle()
+
+            val updated = repository.save(
+                saved.copy(
+                    processingStatus = ProcessingStatusEntity.UPLOADED
                 )
-            }.awaitSingle()
+            ).awaitSingle()
+
+            ConvertFileEvent(requestId, onLocalDisk).let {
+                eventProducer.publishEvent(it)
+            }
+
+            return updated;
+        } catch (ex: Exception) {
+            repository.save(
+                saved.copy(
+                    processingStatus = ProcessingStatusEntity.FAILED
+                )
+            ).awaitSingle()
+            throw ex
+        }
     }
 }

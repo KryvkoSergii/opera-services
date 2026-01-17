@@ -1,6 +1,5 @@
 package ua.com.goit.clearbreath.analysis.domain.mapper
 
-import org.mapstruct.Mapper
 import org.springframework.stereotype.Component
 import ua.com.goit.clearbreath.analysis.domain.models.GenderEntity
 import ua.com.goit.clearbreath.analysis.model.Gender

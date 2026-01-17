@@ -5,16 +5,14 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import ua.com.goit.clearbreath.analysis.domain.mapper.HistoryMapper
 import ua.com.goit.clearbreath.analysis.domain.repositories.HistoryItemResultRepository
-import ua.com.goit.clearbreath.analysis.domain.repositories.HistoryProcessingItemRepository
 import ua.com.goit.clearbreath.analysis.domain.repositories.HistoryRepository
 import ua.com.goit.clearbreath.analysis.model.PaginatedRequestHistory
-import java.util.UUID
+import java.util.*
 
 @Service
 class DefaultHistoryService(
     private val historyRepository: HistoryRepository,
     private val userService: UserService,
-    private val processingItemRepository: HistoryProcessingItemRepository,
     private val resultItemRepository: HistoryItemResultRepository,
     private val historyMapper: HistoryMapper
 ) : HistoryService {
@@ -32,12 +30,6 @@ class DefaultHistoryService(
             .mapNotNull { it.requestId }
             .distinct()
 
-        val processingItemsByRequestId = processingItemRepository
-                .findByRequestsId(requestIds)
-                .collectList()
-                .awaitSingle()
-                .groupBy { it.requestId }
-
         val resultItemsByRequestId = resultItemRepository
                 .findByRequestsId(requestIds)
                 .collectList()
@@ -45,11 +37,7 @@ class DefaultHistoryService(
                 .groupBy { it.requestId }
 
         val content = historyList.map { history ->
-            historyMapper.mapHistory(
-                history,
-                processingItemsByRequestId[history.requestId].orEmpty(),
-                resultItemsByRequestId[history.requestId].orEmpty()
-            )
+            historyMapper.mapHistory(history, resultItemsByRequestId[history.requestId].orEmpty())
         }
 
         val total = historyRepository.countAll(userId).awaitSingle().toInt()

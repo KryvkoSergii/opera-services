@@ -17,5 +17,5 @@ interface HistoryItemResultRepository : ReactiveCrudRepository<HistoryItemResult
         WHERE request_id in (:requestIds)
         """
     )
-    fun findByRequestsId(requestIds: Collection<UUID>): Flux<HistoryProcessingItem>
+    fun findByRequestsId(requestIds: Collection<UUID>): Flux<HistoryItemResult>
 }

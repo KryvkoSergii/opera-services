@@ -17,8 +17,8 @@ data class EvaluationModelMetadataEntity(
     @Column("diagnose")
     val diagnose: String,
 
-    @Column("experimental_relevance")
-    val experimentalRelevance: Double,
+    @Column("model_auc")
+    val modelAuc: Double,
 
     @Column("description")
     val description: String

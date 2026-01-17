@@ -143,7 +143,7 @@
                 <constraints nullable="false"/>
             </column>
 
-            <column name="experimental_relevance" type="decimal">
+            <column name="model_auc" type="decimal">
                 <constraints nullable="false"/>
             </column>
 
@@ -151,11 +151,11 @@
         </createTable>
 
         <sql>
-            INSERT INTO models_metadata (model_name, diagnose, experimental_relevance, description)
+            INSERT INTO evaluation_model_metadata (model_name, diagnose, model_auc, description)
             VALUES ('COVID_COUGH_OperaCT_768', 'COVID19', 0.57, 'Defines probability of COVID-19'),
                    ('COVIDUK_COUGH_OperaCT_768', 'COVID19', 0.70, 'Defines probability of COVID-19'),
                    ('ICBHI_DISEASE_OperaCT_768', 'COPD', 0.85,
-                    'Defines probability of Chronic Obstructive Pulmonary Disease'),
+                    'Defines probability of Chronic Obstructive Pulmonary Disease')
         </sql>
     </changeSet>
 </databaseChangeLog>

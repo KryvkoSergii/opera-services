@@ -9,18 +9,20 @@ import org.springframework.security.web.server.SecurityWebFilterChain
 import org.springframework.security.web.server.authentication.AuthenticationWebFilter
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository
 import ua.com.goit.clearbreath.analysis.domain.services.TokenService
+import ua.com.goit.clearbreath.analysis.domain.services.UserService
 import ua.com.goit.clearbreath.analysis.security.BearerTokenServerAuthenticationConverter
 import ua.com.goit.clearbreath.analysis.security.JwtReactiveAuthenticationManager
 
 @Configuration
 @EnableReactiveMethodSecurity
 class SecurityConfig(
-    private val tokenService: TokenService
+    private val tokenService: TokenService,
+    private val userService: UserService
 ) {
 
     @Bean
     fun springSecurityFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain {
-        val authWebFilter = AuthenticationWebFilter(JwtReactiveAuthenticationManager(tokenService)).apply {
+        val authWebFilter = AuthenticationWebFilter(JwtReactiveAuthenticationManager(tokenService, userService)).apply {
             setServerAuthenticationConverter(BearerTokenServerAuthenticationConverter())
             // Stateless: контекст не зберігаємо в сесії, тільки на запит
             setSecurityContextRepository(NoOpServerSecurityContextRepository.getInstance())
