@@ -8,20 +8,27 @@ import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
 
-from processor import process_message
+from processor import process_message, ResultItem
+from contracts.models.inference_start_event_payload import InferenceStartEventPayload
+from contracts.models.inference_result_event_payload import InferenceResultEventPayload
+from contracts.models.event_status import EventStatus
+from enum import Enum
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 log = logging.getLogger("opera-worker")
 
 AWS_REGION = os.getenv("AWS_REGION")
-QUEUE_URL = os.getenv("QUEUE_URL")
+INFERENCE_START_QUEUE_URL = os.getenv("INFERENCE_START_QUEUE_URL")
+INFERENCE_RESULT_QUEUE_URL = os.getenv("INFERENCE_RESULT_QUEUE_URL")
 
 WAIT_TIME_SECONDS = int(os.getenv("WAIT_TIME_SECONDS", "20"))   # long polling
 MAX_MESSAGES = int(os.getenv("MAX_MESSAGES", "1"))              # 1..10
 VISIBILITY_TIMEOUT = int(os.getenv("VISIBILITY_TIMEOUT", "300"))# seconds
 
-if not QUEUE_URL:
-    raise RuntimeError("QUEUE_URL env var is required")
+if not INFERENCE_START_QUEUE_URL:
+    raise RuntimeError("INFERENCE_START_QUEUE_URL env var is required")
+if not INFERENCE_RESULT_QUEUE_URL:
+    raise RuntimeError("INFERENCE_RESULT_QUEUE_URL env var is required")
 
 boto_cfg = Config(region_name=AWS_REGION, retries={"max_attempts": 10, "mode": "standard"})
 
@@ -31,7 +38,7 @@ s3  = boto3.client("s3",  config=boto_cfg, endpoint_url=ENDPOINT_URL) if ENDPOIN
 
 def receive_one() -> Optional[Dict[str, Any]]:
     resp = sqs.receive_message(
-        QueueUrl=QUEUE_URL,
+        QueueUrl=INFERENCE_START_QUEUE_URL,
         MaxNumberOfMessages=MAX_MESSAGES,
         WaitTimeSeconds=WAIT_TIME_SECONDS,
         VisibilityTimeout=VISIBILITY_TIMEOUT,
@@ -40,17 +47,22 @@ def receive_one() -> Optional[Dict[str, Any]]:
     msgs = resp.get("Messages", [])
     return msgs[0] if msgs else None
 
+def send(payload):
+    response = sqs.send_message(
+        QueueUrl=INFERENCE_RESULT_QUEUE_URL,
+        MessageBody=json.dumps(payload),
+    )
 
 def delete_message(receipt_handle: str) -> None:
-    sqs.delete_message(QueueUrl=QUEUE_URL, ReceiptHandle=receipt_handle)
+    sqs.delete_message(QueueUrl=INFERENCE_START_QUEUE_URL, ReceiptHandle=receipt_handle)
 
 
 def change_visibility(receipt_handle: str, timeout: int) -> None:
-    sqs.change_message_visibility(QueueUrl=QUEUE_URL, ReceiptHandle=receipt_handle, VisibilityTimeout=timeout)
+    sqs.change_message_visibility(QueueUrl=INFERENCE_START_QUEUE_URL, ReceiptHandle=receipt_handle, VisibilityTimeout=timeout)
 
 
 def main_loop() -> None:
-    log.info("Worker started. region=%s queue=%s", AWS_REGION, QUEUE_URL)
+    log.info("Worker started. region=%s queue=%s", AWS_REGION, INFERENCE_START_QUEUE_URL)
 
     while True:
         msg = receive_one()
@@ -61,7 +73,8 @@ def main_loop() -> None:
         body = msg.get("Body", "")
 
         try:
-            payload = json.loads(body)
+            data = json.loads(body)
+            payload = InferenceStartEventPayload(data)
         except Exception:
             log.exception("Bad JSON in message body: %s", body)
             # не видаляємо — хай піде в DLQ після maxReceiveCount
@@ -69,23 +82,42 @@ def main_loop() -> None:
 
         start = time.time()
         try:
-            log.info("Processing requestId=%s bucket=%s key=%s",
-                     payload.get("requestId"), payload.get("bucket"), payload.get("key"))
+            log.info("Processing requestId=%s itemId=%s key=%s",
+                     payload.request_id, payload.item_id, payload.file_location)
 
-            result = process_message(payload, s3)  # тут твоя логіка
+            result = process_message(payload, s3)
 
             log.info("Processing result: %s", result)
 
             delete_message(receipt)
-            log.info("Done in %.2fs requestId=%s", time.time() - start, payload.get("requestId"))
+
+            for item in result:
+                result_payload: InferenceResultEventPayload = {
+                    "requestId": payload.request_id,
+                    "itemId": payload.item_id,
+                    "modelName": item.task,
+                    "probability": item.probability,
+                    "status": EventStatus.COMPLETED.value
+                }
+                send(result_payload)
+                log.info("Result payload: %s", result_payload.__dict__)
+
+            log.info("Done in %.2fs requestId=%s", time.time() - start, payload.request_id)
 
         except Exception as e:
             log.exception("Processing failed: %s", str(e))
+
+            result_payload: InferenceResultEventPayload = {
+                "requestId": payload.request_id,
+                "itemId": payload.item_id,
+                "error" : str(e),
+                "status": EventStatus.FAILED.value
+            }
+            send(result_payload)
             # опціонально: збільшити visibility, щоб дати більше часу на ретрай
             # change_visibility(receipt, 60)
             # НЕ delete -> SQS retry -> DLQ при потребі
             continue
-
 
 if __name__ == "__main__":
     main_loop()

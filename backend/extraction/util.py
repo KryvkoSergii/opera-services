@@ -51,7 +51,6 @@ def extract_opera_feature(file_ref: FileInS3, device: str, pretrain: str = "oper
     opera_features.append(features.tolist()[0])
 
     x_data = np.array(opera_features)
-    print(x_data.shape)
     return x_data
 
 

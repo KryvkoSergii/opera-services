@@ -1,0 +1,16 @@
+# .dockerignore
+
+backend/analysis/docker
+backend/analysis/tmp
+backend/analysis/.kotlin
+backend/analysis/.gradle
+backend/analysis/build
+
+.env
+docker
+.idea
+
+frontend/breath-ui/node_modules
+frontend/breath-ui/build
+
+temp-files

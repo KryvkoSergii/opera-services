@@ -22,14 +22,14 @@ class HistoryMapper(
         history: HistoryEntity,
         itemResults: List<HistoryItemResult>
     ): HistoryItem {
-            return HistoryItem(
-                history.requestId.toString(),
-                OffsetDateTime.of(history.createdAt, ZoneOffset.UTC),
-                sourceTypeMapper.toDto(history.sourceType),
-                processingStatusMapper.toDto(history.processingStatus),
-                summaryService.summarize(itemResults).map { getDetails(it.key, it.value) },
-                history.recommendation,
-            )
+        return HistoryItem(
+            history.requestId.toString(),
+            OffsetDateTime.of(history.createdAt, ZoneOffset.UTC),
+            sourceTypeMapper.toDto(history.sourceType ?: throw IllegalStateException("Source type is null")),
+            processingStatusMapper.toDto(history.processingStatus),
+            summaryService.summarize(itemResults).map { getDetails(it.key, it.value) },
+            history.recommendation,
+        )
     }
 
     private fun getDetails(disease: String, probability: Double): ModelDetail {

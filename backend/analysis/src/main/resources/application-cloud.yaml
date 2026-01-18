@@ -1,12 +1,13 @@
 s3:
-  bucket: clear-breath-storage
+  bucket: ${FILE_STORAGE_BUCKET}
 sqs:
-  inference-start-queue-url: ${AWS_SQS_OUTPUT_QUEUE_URL}
-  inference-result-queue-url: ${AWS_SQS_INPUT_QUEUE_URL}
+  inference-start-queue-url: ${INFERENCE_START_QUEUE_URL}
+  inference-result-queue-url: ${INFERENCE_RESULT_QUEUE_URL}
 
 aws:
   access-key-id: ${AWS_ACCESS_KEY_ID}
   secret-access-key: ${AWS_SECRET_ACCESS_KEY}
   region: ${AWS_REGION}
+  aws-endpoint-url: ${AWS_ENDPOINT_URL}
 
 

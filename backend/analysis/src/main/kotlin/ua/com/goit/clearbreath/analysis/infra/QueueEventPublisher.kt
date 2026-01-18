@@ -22,19 +22,6 @@ class QueueEventPublisher(
         val request = SendMessageRequest.builder()
             .queueUrl(queueUrl)
             .messageBody(body)
-            // (опціонально) атрибути для фільтрації/логіки
-//            .messageAttributes(
-//                mapOf(
-//                    "eventType" to MessageAttributeValue.builder()
-//                        .dataType("String")
-//                        .stringValue("StartInferenceEvent")
-//                        .build(),
-//                    "requestId" to MessageAttributeValue.builder()
-//                        .dataType("String")
-//                        .stringValue(payload.requestId.toString())
-//                        .build()
-//                )
-//            )
             .build()
 
         return Mono.fromFuture(sqs.sendMessage(request))

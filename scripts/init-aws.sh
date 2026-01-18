@@ -1,20 +1,20 @@
 #!/bin/sh
 set -e
 
-ENDPOINT="http://localstack:4566"
-REGION="${AWS_DEFAULT_REGION:-eu-central-1}"
+ENDPOINT=${AWS_ENDPOINT_URL}
+REGION=${AWS_DEFAULT_REGION}
+BUCKET=${FILE_STORAGE_BUCKET}
+START_QUEUE_NAME=${INFERENCE_START_QUEUE_NAME}
+RESULT_QUEUE_NAME=${INFERENCE_RESULT_QUEUE_NAME}
 
-aws --region "$REGION" --endpoint-url="$ENDPOINT" s3 mb s3://input-bucket 2>/dev/null || true
-aws --region "$REGION" --endpoint-url="$ENDPOINT" s3 mb s3://results-bucket 2>/dev/null || true
+echo ENDPOINT="$ENDPOINT"
+echo REGION="$REGION"
+echo BUCKET="$BUCKET"
+echo START_QUEUE_NAME="$START_QUEUE_NAME"
+echo RESULT_QUEUE_NAME="$RESULT_QUEUE_NAME"
 
-aws --region "$REGION" --endpoint-url="$ENDPOINT" sqs create-queue --queue-name opera-queue >/dev/null
-
-aws --region "$REGION" --endpoint-url="$ENDPOINT" s3 cp /samples/breath.wav s3://input-bucket/audio/breath.wav
+aws --region "$REGION" --endpoint-url="$ENDPOINT" s3 mb s3://"$BUCKET" 2>/dev/null || true
+aws --region "$REGION" --endpoint-url="$ENDPOINT" sqs create-queue --queue-name "$START_QUEUE_NAME" >/dev/null
+aws --region "$REGION" --endpoint-url="$ENDPOINT" sqs create-queue --queue-name "$RESULT_QUEUE_NAME" >/dev/null
 
 echo "Infra initialized"
-
-aws --region "$REGION" --endpoint-url="$ENDPOINT" sqs send-message \
-  --queue-url http://localhost:4566/000000000000/opera-queue \
-  --message-body '{"bucket":"input-bucket","key":"audio/breath.wav","requestId":"9aa0d17b-a638-4002-ac3c-7b4259b82b1f", "source":"microphone"}'
-
-echo "Event initialized"

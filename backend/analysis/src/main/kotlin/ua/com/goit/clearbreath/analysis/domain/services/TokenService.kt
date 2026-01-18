@@ -1,10 +1,12 @@
 package ua.com.goit.clearbreath.analysis.domain.services
 
 import io.jsonwebtoken.Claims
+import io.jsonwebtoken.ExpiredJwtException
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
+import ua.com.goit.clearbreath.analysis.domain.exceptions.AuthenticationException
 import java.time.Instant
 import java.util.*
 import javax.crypto.SecretKey
@@ -44,7 +46,11 @@ class TokenService(
             .clockSkewSeconds(clockSkewSeconds)
             .build()
 
-        val jws = parser.parseSignedClaims(token)
-        return jws.payload
+        try {
+            val jws = parser.parseSignedClaims(token)
+            return jws.payload
+        } catch (e: ExpiredJwtException) {
+            throw AuthenticationException("Expired token")
+        }
     }
 }

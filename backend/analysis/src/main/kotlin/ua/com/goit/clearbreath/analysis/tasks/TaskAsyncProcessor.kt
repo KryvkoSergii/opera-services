@@ -41,6 +41,7 @@ class TaskAsyncProcessor(
             historyRepository.save(
                 HistoryEntity(
                     requestId = requestId,
+                    sourceType = event.source,
                     processingStatus = ProcessingStatusEntity.FAILED
                 )
             ).subscribe()
@@ -107,6 +108,19 @@ class TaskAsyncProcessor(
                             }
                     }
             }
+            .then(
+                itemRepository.existsByRequestIdAndProcessingStatusNot(requestId, ProcessingStatusEntity.FAILED)
+                    .flatMap { hasNotFailed ->
+                        if (hasNotFailed) Mono.empty()
+                        else historyRepository.save(
+                            HistoryEntity(
+                                requestId = requestId,
+                                sourceType = event.source,
+                                processingStatus = ProcessingStatusEntity.FAILED
+                            )
+                        ).then()
+                    }
+            )
             .subscribe()
     }
 

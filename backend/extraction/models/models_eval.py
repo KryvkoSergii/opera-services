@@ -39,7 +39,6 @@ class AudioClassifier(pl.LightningModule):
                     # print(name)
 
         if head == 'linear':
-            print(feat_dim, classes)
             self.head = nn.Sequential(nn.Linear(feat_dim, classes))
         elif head == 'mlp':
             self.head = nn.Sequential(

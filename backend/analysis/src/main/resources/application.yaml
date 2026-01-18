@@ -4,13 +4,13 @@ spring:
   application:
     name: analysis
   r2dbc:
-    url: r2dbc:postgresql://localhost:5432/analysis
+    url: ${DB_REACT_URL:r2dbc:postgresql://localhost:5432/analysis}
     username: user
     password: password
   liquibase:
     enabled: true
     change-log: classpath:db/changelog/db.changelog-master.xml
-    url: jdbc:postgresql://localhost:5432/analysis
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/analysis}
     user: user
     password: password
   servlet:
@@ -20,7 +20,7 @@ spring:
       max-request-size: 6MB
 auth:
   issuer: clear-breath
-  secret: 53ed5613c4834c46a9c6da05a5bcb738
+  secret: ${AUTH_SECRET}
 
 logging:
   level:

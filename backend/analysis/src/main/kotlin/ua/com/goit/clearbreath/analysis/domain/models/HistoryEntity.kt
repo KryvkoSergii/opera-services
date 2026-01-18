@@ -19,7 +19,7 @@ data class HistoryEntity(
     val processingStatus: ProcessingStatusEntity,
 
     @Column("source_type")
-    val sourceType: SourceTypeEntity? = null,
+    val sourceType: SourceTypeEntity,
 
     @Column("user_id")
     val user: UUID? = null,
