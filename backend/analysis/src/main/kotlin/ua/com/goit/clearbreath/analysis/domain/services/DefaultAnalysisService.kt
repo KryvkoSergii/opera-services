@@ -6,7 +6,6 @@ import ua.com.goit.clearbreath.analysis.domain.models.HistoryEntity
 import ua.com.goit.clearbreath.analysis.domain.models.ProcessingStatusEntity
 import ua.com.goit.clearbreath.analysis.domain.models.SourceTypeEntity
 import ua.com.goit.clearbreath.analysis.domain.repositories.HistoryRepository
-import ua.com.goit.clearbreath.analysis.domain.repositories.StorageRepository
 import ua.com.goit.clearbreath.analysis.tasks.ConvertFileEvent
 import ua.com.goit.clearbreath.analysis.tasks.EventProducer
 import ua.com.goit.clearbreath.analysis.utils.DiskUtil
@@ -15,7 +14,6 @@ import java.nio.file.Path
 @Service
 class DefaultAnalysisService(
     private val repository: HistoryRepository,
-    private val storageRepository: StorageRepository?,
     private val userService: UserService,
     private val eventProducer: EventProducer
 ) : AnalysisService {
@@ -46,16 +44,13 @@ class DefaultAnalysisService(
             val onLocalDisk: Path =
                 DiskUtil.saveOriginalToTempDirectoryOnDisk(fileDesc.fileContent, fileName).awaitSingle()
 
-//            val fileRef = storageRepository.saveOriginalFileToRemote(onLocalDisk)
-//                .awaitSingle()
-
             val updated = repository.save(
                 saved.copy(
                     processingStatus = ProcessingStatusEntity.UPLOADED
                 )
             ).awaitSingle()
 
-            ConvertFileEvent(requestId, onLocalDisk).let {
+            ConvertFileEvent(requestId, onLocalDisk, sourceType).let {
                 eventProducer.publishEvent(it)
             }
 

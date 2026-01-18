@@ -19,10 +19,10 @@ data class HistoryEntity(
     val processingStatus: ProcessingStatusEntity,
 
     @Column("source_type")
-    val sourceType: SourceTypeEntity,
+    val sourceType: SourceTypeEntity? = null,
 
     @Column("user_id")
-    val user: UUID,
+    val user: UUID? = null,
 
     @Column("recommendation")
     val recommendation: String? = null,

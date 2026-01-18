@@ -1,0 +1,152 @@
+asyncapi: 3.0.0
+id: "urn:ua.com.goit.clearbreath:inference-events"
+
+info:
+  title: Inference Events API
+  version: 1.0.0
+  description: >
+    AsyncAPI contract for exchanging inference events via Amazon SQS.
+    Two event types are supported: InferenceStartEvent and InferenceResultEvent.
+  tags:
+    - name: inference
+
+defaultContentType: application/json
+
+servers:
+  awsSqs:
+    host: "sqs.{region}.amazonaws.com"
+    protocol: sqs
+    description: Amazon SQS
+    variables:
+      region:
+        description: AWS region
+        default: eu-central-1
+      accountId:
+        description: AWS account id
+        default: "000000000000"
+
+channels:
+  inference-start-queue:
+    address: "{accountId}/inference-start-queue"
+    description: SQS queue carrying InferenceStartEvent
+    bindings:
+      sqs:
+        queue:
+          name: inference-start-queue
+          fifoQueue: false
+    messages:
+      inferenceStartV1:
+        $ref: "#/components/messages/InferenceStartEvent"
+
+  inference-result-queue:
+    address: "{accountId}/inference-result-queue"
+    description: SQS queue carrying InferenceResultEvent
+    bindings:
+      sqs:
+        queue:
+          name: inference-result-queue
+          fifoQueue: false
+    messages:
+      inferenceResultV1:
+        $ref: "#/components/messages/InferenceResultEvent"
+
+operations:
+  publishStartInferenceEvent:
+    action: send
+    channel:
+      $ref: "#/channels/inference-start-queue"
+    summary: Publish start inference events into the queue
+    messages:
+      - $ref: "#/channels/inference-start-queue/messages/inferenceStartV1"
+
+  consumeStartInferenceEvent:
+    action: receive
+    channel:
+      $ref: "#/channels/inference-start-queue"
+    summary: Consume start inference events from the queue
+    messages:
+      - $ref: "#/channels/inference-start-queue/messages/inferenceStartV1"
+
+  publishResultInferenceEvent:
+    action: send
+    channel:
+      $ref: "#/channels/inference-result-queue"
+    summary: Publish result inference events into the queue
+    messages:
+      - $ref: "#/channels/inference-result-queue/messages/inferenceResultV1"
+
+  consumeResultInferenceEvent:
+    action: receive
+    channel:
+      $ref: "#/channels/inference-result-queue"
+    summary: Consume result inference events from the queue
+    messages:
+      - $ref: "#/channels/inference-result-queue/messages/inferenceResultV1"
+
+components:
+  messages:
+    InferenceStartEvent:
+      name: InferenceStartEvent
+      title: InferenceStartEvent
+      summary: Triggers inference for a given item.
+      payload:
+        $ref: "#/components/schemas/InferenceStartEventPayload"
+
+    InferenceResultEvent:
+      name: InferenceResultEvent
+      title: InferenceResultEvent
+      summary: Inference result for a given item.
+      payload:
+        $ref: "#/components/schemas/InferenceResultEventPayload"
+
+  schemas:
+    EventSource:
+      type: string
+      description: Source device type
+      enum: [microphone, stethoscope]
+
+    EventStatus:
+      type: string
+      description: Inference status
+      enum: [FAILED, COMPLETED]
+
+    InferenceStartEventPayload:
+      type: object
+      additionalProperties: false
+      required: [requestId, itemId, fileLocation, source]
+      properties:
+        requestId:
+          type: string
+          format: uuid
+        itemId:
+          type: string
+          format: uuid
+        fileLocation:
+          type: string
+          description: Location of the file (e.g., S3 URI or internal storage path)
+        source:
+          $ref: "#/components/schemas/EventSource"
+
+    InferenceResultEventPayload:
+      type: object
+      additionalProperties: false
+      required: [requestId, itemId, modelName]
+      properties:
+        requestId:
+          type: string
+          format: uuid
+        itemId:
+          type: string
+          format: uuid
+        modelName:
+          type: string
+        probability:
+          type: number
+          format: double
+          minimum: 0.0
+          maximum: 1.0
+        status:
+          $ref: "#/components/schemas/EventStatus"
+        error:
+          type: string
+          description: Error message if inference failed

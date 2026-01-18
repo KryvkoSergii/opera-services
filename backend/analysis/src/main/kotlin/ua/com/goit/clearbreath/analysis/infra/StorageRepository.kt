@@ -1,4 +1,4 @@
-package ua.com.goit.clearbreath.analysis.domain.repositories
+package ua.com.goit.clearbreath.analysis.infra
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
@@ -17,15 +17,16 @@ class StorageRepository(
     private val bucket: String
 ) {
 
-    fun saveOriginalFileToRemote(fileOnLocalDisk: Path): Mono<String> {
-        val fileName = getKeyForOriginalFile(fileOnLocalDisk.fileName.toString())
+    fun saveConvertedFileToRemoteStorage(fileOnLocalDisk: Path): Mono<String> {
+        val fileName = getKeyForConvertedFile(fileOnLocalDisk.fileName.toString())
         val request = PutObjectRequest.builder().bucket(bucket).key(fileName).build()
         val body = AsyncRequestBody.fromFile(fileOnLocalDisk)
-        return Mono.fromFuture(s3Client.putObject(request, body)).thenReturn(fileName)
+        return Mono.fromFuture(s3Client.putObject(request, body))
+            .thenReturn(fileName)
     }
 
-    private fun getKeyForOriginalFile(fileName: String): String {
-        return key("original", fileName)
+    private fun getKeyForConvertedFile(fileName: String): String {
+        return key("converted", fileName)
     }
 
     private fun key(type: String, fileName: String): String {

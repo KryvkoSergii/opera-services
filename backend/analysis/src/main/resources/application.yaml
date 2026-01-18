@@ -22,12 +22,9 @@ auth:
   issuer: clear-breath
   secret: 53ed5613c4834c46a9c6da05a5bcb738
 
-s3:
-  bucket: clear-breath-storage
-
-aws:
-  access-key-id: ${AWS_ACCESS_KEY_ID}
-  secret-access-key: ${AWS_SECRET_ACCESS_KEY}
-  region: ${AWS_REGION}
+logging:
+  level:
+    root: INFO
+    ua.com.goit.clearbreath: DEBUG
 
 

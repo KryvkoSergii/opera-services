@@ -15,7 +15,7 @@ data class HistoryProcessingItem(
     val requestId: UUID,
 
     @Column("file_location")
-    val fileLocation: String,
+    val fileLocation: String? = null,
 
     @Column("processing_status")
     val processingStatus: ProcessingStatusEntity,

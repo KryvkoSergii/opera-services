@@ -26,6 +26,12 @@ object DiskUtil {
             .then(Mono.just(filename))
     }
 
+    fun removeTempFile(path: Path): Mono<Boolean> {
+        return Mono.fromCallable {
+            Files.deleteIfExists(path)
+        }
+    }
+
     private fun getDir(path: String): Path {
         val dir = Path.of(path)
         if (!Files.exists(dir)) {

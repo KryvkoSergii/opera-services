@@ -74,13 +74,13 @@ tasks.register('openApiGenerateCore', GenerateTask) {
     invokerPackage = "ua.com.goit.clearbreath.analysis.invoker"
     globalProperties = [apis: "", models: ""]
     configOptions = [
-            interfaceOnly: "true",
-            useSpringBoot3: "true",
-            reactive: "true",
+            interfaceOnly       : "true",
+            useSpringBoot3      : "true",
+            reactive            : "true",
             serializationLibrary: "jackson",
-            dateLibrary: "java8",
-            enumPropertyNaming: "UPPERCASE",
-            useTags: "true"
+            dateLibrary         : "java8",
+            enumPropertyNaming  : "UPPERCASE",
+            useTags             : "true"
     ]
     generateApiTests = false
     generateModelTests = false
@@ -98,13 +98,13 @@ tasks.register('openApiGenerateUser', GenerateTask) {
     invokerPackage = "ua.com.goit.clearbreath.analysis.invoker"
     globalProperties = [apis: "", models: ""]
     configOptions = [
-            interfaceOnly: "true",
-            useSpringBoot3: "true",
-            reactive: "true",
-            serializationLibrary: "jackson",
-            dateLibrary: "java8",
-            enumPropertyNaming: "UPPERCASE",
-            useTags: "true",
+            interfaceOnly        : "true",
+            useSpringBoot3       : "true",
+            reactive             : "true",
+            serializationLibrary : "jackson",
+            dateLibrary          : "java8",
+            enumPropertyNaming   : "UPPERCASE",
+            useTags              : "true",
             documentationProvider: "none"
     ]
     generateApiTests = false
@@ -126,13 +126,13 @@ tasks.register('openApiGenerateAuth', GenerateTask) {
     invokerPackage = "ua.com.goit.clearbreath.analysis.invoker"
     globalProperties = [apis: "", models: ""]
     configOptions = [
-            interfaceOnly: "true",
-            useSpringBoot3: "true",
-            reactive: "true",
-            serializationLibrary: "jackson",
-            dateLibrary: "java8",
-            enumPropertyNaming: "UPPERCASE",
-            useTags: "true",
+            interfaceOnly        : "true",
+            useSpringBoot3       : "true",
+            reactive             : "true",
+            serializationLibrary : "jackson",
+            dateLibrary          : "java8",
+            enumPropertyNaming   : "UPPERCASE",
+            useTags              : "true",
             documentationProvider: "none"
     ]
     generateApiTests = false
@@ -145,16 +145,32 @@ tasks.register('openApiGenerateAuth', GenerateTask) {
     ]
 }
 
+def asyncapiSpec = repoRootDir.file("contract/events.yaml").asFile.absolutePath
+def asyncApiOutDir = layout.buildDirectory.dir("generated/asyncapi/src/main/kotlin/ua.com.goit.clearbreath.analysis.events")
+
+tasks.register("generateAsyncApiModels", Exec) {
+    inputs.file(asyncapiSpec)
+    outputs.dir(asyncApiOutDir)
+
+    commandLine "npx",
+            "@asyncapi/cli",
+            "generate", "models", "kotlin",
+            asyncapiSpec,
+            "--packageName", "ua.com.goit.clearbreath.analysis.events",
+            "-o", asyncApiOutDir.get().asFile.absolutePath
+}
+
 tasks.configureEach {
     if (name.contains("Kotlin") || name.startsWith("kapt")) {
-        dependsOn("openApiGenerateCore" , "openApiGenerateUser", "openApiGenerateAuth")
+        dependsOn("openApiGenerateCore", "openApiGenerateUser", "openApiGenerateAuth", "generateAsyncApiModels")
     }
 }
 
 sourceSets.main.kotlin.srcDirs += [
         openApiOut.map { it.dir("core/src/main/kotlin") }.get().asFile,
         openApiOut.map { it.dir("user/src/main/kotlin") }.get().asFile,
-        openApiOut.map { it.dir("auth/src/main/kotlin") }.get().asFile
+        openApiOut.map { it.dir("auth/src/main/kotlin") }.get().asFile,
+        asyncApiOutDir.get().asFile,
 ]
 
 tasks.named('test') {

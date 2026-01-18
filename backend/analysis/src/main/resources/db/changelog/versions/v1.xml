@@ -74,7 +74,7 @@
                 <constraints nullable="false"/>
             </column>
 
-            <column name="file_location" type="varchar(255)"/>
+            <column name="file_location" type="varchar"/>
 
             <column name="processing_status" type="varchar(20)">
                 <constraints nullable="false"/>
