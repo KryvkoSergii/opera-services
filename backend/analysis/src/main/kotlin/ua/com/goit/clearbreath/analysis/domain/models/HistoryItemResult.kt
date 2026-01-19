@@ -17,9 +17,6 @@ data class HistoryItemResult(
     @Column("request_id")
     val requestId: UUID,
 
-    @Column("file_location")
-    val fileLocation: String?,
-
     @Column("model_name")
     val modelName: String,
 

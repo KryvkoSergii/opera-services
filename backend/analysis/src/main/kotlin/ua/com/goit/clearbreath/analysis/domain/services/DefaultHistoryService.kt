@@ -18,7 +18,7 @@ class DefaultHistoryService(
 ) : HistoryService {
 
     override suspend fun getHistory(page: Int, perPage: Int): PaginatedRequestHistory {
-        val pagination = PageRequest.of(page, perPage)
+        val pagination = PageRequest.of(page - 1, perPage)
         val userId: UUID = userService.getCurrentUser().userId ?: throw IllegalStateException("User ID is null")
 
         val historyList = historyRepository
