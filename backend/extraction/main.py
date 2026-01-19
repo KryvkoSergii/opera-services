@@ -92,6 +92,8 @@ def main_loop() -> None:
             delete_message(receipt)
 
             for item in result:
+                log.info("Result item: %s", item.probability)
+
                 result_payload: InferenceResultEventPayload = {
                     "requestId": payload.request_id,
                     "itemId": payload.item_id,
@@ -100,7 +102,7 @@ def main_loop() -> None:
                     "status": EventStatus.COMPLETED.value
                 }
                 send(result_payload)
-                log.info("Result payload: %s", result_payload.__dict__)
+                log.info("Result payload: %s", result_payload)
 
             log.info("Done in %.2fs requestId=%s", time.time() - start, payload.request_id)
 

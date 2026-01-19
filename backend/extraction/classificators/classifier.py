@@ -49,4 +49,8 @@ class Classifier(ABC):
     def requires_preprocessor(self) -> bool:
         pass
 
+    @abstractmethod
+    def positive_probability(self, probs) -> float:
+        pass
+
 

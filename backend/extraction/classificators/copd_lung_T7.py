@@ -24,3 +24,7 @@ class CopdLung(LinearOperaClassifier):
 
     def requires_preprocessor(self) -> bool:
         return True
+
+    def positive_probability(self, probs) -> float:
+        # 0: Healthy, 1: COPD
+        return float(probs[1])

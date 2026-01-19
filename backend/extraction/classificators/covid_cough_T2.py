@@ -25,3 +25,8 @@ class CovidCough1(LinearOperaClassifier):
     def requires_preprocessor(self) -> bool:
         return True
 
+    def positive_probability(self, probs) -> float:
+        # "COVID-19": 1,
+        # "healthy": 0,
+        return float(probs[1])
+
