@@ -3,3 +3,5 @@
 /backend/analysis/build
 /backend/analysis/.env
 /backend/analysis/docker
+
+/frontend/breath-ui/.env.local

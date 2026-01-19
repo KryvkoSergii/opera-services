@@ -8,6 +8,9 @@ import org.springframework.security.config.web.server.ServerHttpSecurity
 import org.springframework.security.web.server.SecurityWebFilterChain
 import org.springframework.security.web.server.authentication.AuthenticationWebFilter
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository
+import org.springframework.web.cors.CorsConfiguration
+import org.springframework.web.cors.reactive.CorsConfigurationSource
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource
 import ua.com.goit.clearbreath.analysis.domain.services.TokenService
 import ua.com.goit.clearbreath.analysis.domain.services.UserService
 import ua.com.goit.clearbreath.analysis.security.BearerTokenServerAuthenticationConverter
@@ -29,6 +32,7 @@ class SecurityConfig(
         }
 
         return http
+            .cors { }
             .csrf { it.disable() }
             .httpBasic { it.disable() }
             .formLogin { it.disable() }
@@ -38,5 +42,18 @@ class SecurityConfig(
             }
             .addFilterAt(authWebFilter, SecurityWebFiltersOrder.AUTHENTICATION)
             .build()
+    }
+
+    @Bean
+    fun corsConfigurationSource(): CorsConfigurationSource {
+        val config = CorsConfiguration()
+        config.allowedOrigins = listOf("http://localhost:5173")
+        config.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
+        config.allowedHeaders = listOf("*")
+        config.allowCredentials = true
+
+        val source = UrlBasedCorsConfigurationSource()
+        source.registerCorsConfiguration("/**", config)
+        return source
     }
 }

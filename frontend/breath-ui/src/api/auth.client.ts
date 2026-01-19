@@ -1,4 +1,5 @@
-import axios, { AxiosInstance, AxiosError } from "axios";
+import axios from "axios";
+import type { AxiosInstance, AxiosError } from "axios";
 
 export interface UserLoginRequest {
     email: string;

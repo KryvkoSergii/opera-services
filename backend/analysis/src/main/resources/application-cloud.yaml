@@ -2,12 +2,17 @@ s3:
   bucket: ${FILE_STORAGE_BUCKET}
 sqs:
   inference-start-queue-url: ${INFERENCE_START_QUEUE_URL}
-  inference-result-queue-url: ${INFERENCE_RESULT_QUEUE_URL}
+  inference-result-queue: ${INFERENCE_RESULT_QUEUE_NAME}
 
 aws:
-  access-key-id: ${AWS_ACCESS_KEY_ID}
-  secret-access-key: ${AWS_SECRET_ACCESS_KEY}
   region: ${AWS_REGION}
   aws-endpoint-url: ${AWS_ENDPOINT_URL}
 
+spring:
+  cloud:
+    aws:
+      region:
+        static: ${aws.region}
+      sqs:
+        endpoint: ${aws.aws-endpoint-url}
 

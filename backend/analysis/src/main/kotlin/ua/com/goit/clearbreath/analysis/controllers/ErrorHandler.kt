@@ -3,6 +3,7 @@ package ua.com.goit.clearbreath.analysis.controllers
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
+import ua.com.goit.clearbreath.analysis.domain.exceptions.AuthenticationException
 import ua.com.goit.clearbreath.analysis.domain.exceptions.UserExistsException
 import ua.com.goit.clearbreath.analysis.model.ErrorResponse
 
@@ -24,6 +25,11 @@ class ErrorHandler {
     @ExceptionHandler(IllegalArgumentException::class)
     fun handleIncorrectDataException(ex: Exception): ResponseEntity<ErrorResponse> {
         return ResponseEntity.status(400).body(ErrorResponse(ex.message ?: "Bad Request"))
+    }
+
+    @ExceptionHandler(AuthenticationException::class)
+    fun handleAuthenticationException(ex: Exception): ResponseEntity<ErrorResponse> {
+        return ResponseEntity.status(401).body(ErrorResponse(ex.message ?: "Unauthorized"))
     }
 
 }

@@ -26,10 +26,12 @@ repositories {
 
 dependencies {
     //Spring WebFlux and R2DBC
+    implementation platform('io.awspring.cloud:spring-cloud-aws:3.4.2')
     implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation "io.awspring.cloud:spring-cloud-aws-starter-sqs"
     implementation 'io.projectreactor.kotlin:reactor-kotlin-extensions'
     implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
     implementation 'org.liquibase:liquibase-core'
@@ -62,7 +64,6 @@ kotlin {
     }
 }
 
-//def repoRootDir = layout.projectDirectory.dir("../..")
 // Assuming the 'contract' directory is located at the root of the repository
 def contractDir = findDirUpwards(layout.projectDirectory.asFile, "contract")
 def repoRootDir = contractDir.parentFile
@@ -193,7 +194,9 @@ tasks.register("patchAsyncApiModels") {
 
 tasks.configureEach {
     if (name.contains("Kotlin") || name.startsWith("kapt")) {
-        dependsOn("openApiGenerateCore", "openApiGenerateUser", "openApiGenerateAuth", "generateAsyncApiModels", "patchAsyncApiModels")
+        dependsOn("openApiGenerateCore", "openApiGenerateUser", "openApiGenerateAuth", "generateAsyncApiModels",
+                "patchAsyncApiModels"
+        )
     }
 }
 

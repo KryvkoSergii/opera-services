@@ -19,15 +19,6 @@ import java.net.URI
 class AwsConfig {
 
     @Bean
-    fun awsCredentialsProvider(
-        @Value("\${aws.access-key-id}") accessKey: String,
-        @Value("\${aws.secret-access-key}") secretKey: String
-    ): AwsCredentialsProvider =
-        StaticCredentialsProvider.create(
-            AwsBasicCredentials.create(accessKey, secretKey)
-        )
-
-    @Bean
     fun s3ClientOverride(
         credentialsProvider: AwsCredentialsProvider,
         @Value("\${aws.region}") region: Region,

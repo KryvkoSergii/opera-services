@@ -25,7 +25,7 @@ class HistoryMapper(
         return HistoryItem(
             history.requestId.toString(),
             OffsetDateTime.of(history.createdAt, ZoneOffset.UTC),
-            sourceTypeMapper.toDto(history.sourceType ?: throw IllegalStateException("Source type is null")),
+            sourceTypeMapper.toDto(history.sourceType),
             processingStatusMapper.toDto(history.processingStatus),
             summaryService.summarize(itemResults).map { getDetails(it.key, it.value) },
             history.recommendation,

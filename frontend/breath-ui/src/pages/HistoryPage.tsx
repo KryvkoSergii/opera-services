@@ -16,6 +16,10 @@ import InboxIcon from "@mui/icons-material/Inbox";
 import { PageCard } from "../components/PageCard";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import {AnalysisClient} from "../api/core.client";
+import {useEffect, useState} from "react";
+
+const analysisClient = new AnalysisClient({baseURL: import.meta.env.VITE_API_BASE_URL});
 
 type Row = {
     sentAt: string;
@@ -33,15 +37,37 @@ function diagDotBg(d: Row["diagnosis"]) {
 export function HistoryPage() {
     const { t } = useTranslation();
     const nav = useNavigate();
+    const [rows, setRows] = useState<Row[]>([]);
 
-    // TODO: fetch from API
-    const rows: Row[] = [
-        {sentAt: "2026-01-01", status: "DONE", diagnosis:"Warning", recommendation: "Need to visit doctor"},
-        {sentAt: "2026-01-01", status: "DONE", diagnosis:"Critical", recommendation: "Need to visit doctor ASAP"},
-        {sentAt: "2026-01-01", status: "DONE", diagnosis:"...", recommendation: "Looks good"},
-        {sentAt: "2026-01-01", status: "PROCESSING", diagnosis:"?", recommendation: "Please await"},
+    useEffect(() => {
+        let cancelled = false;
 
-    ]; // <- щоб побачити empty state, залиш порожнім
+        (async () => {
+            try {
+                const res = await analysisClient.listAnalysisRequests({ page: 1, perPage: 10 });
+
+                const items: Row[] = res.items.map((item) => ({
+                    sentAt: new Date(item.requested).toLocaleDateString(),
+                    status: item.status as Row["status"],
+                    diagnosis:
+                        item.details[0]?.status === "high"
+                            ? "Critical"
+                            : item.details[0]?.status === "moderate"
+                                ? "Warning"
+                                : "Normal",
+                    recommendation: item.recommendation || "No recommendation",
+                }));
+
+                if (!cancelled) setRows(items);
+            } catch (e) {
+                console.error(e);
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     if (rows.length === 0) {
         return (

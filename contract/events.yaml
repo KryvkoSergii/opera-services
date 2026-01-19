@@ -130,7 +130,7 @@ components:
     InferenceResultEventPayload:
       type: object
       additionalProperties: false
-      required: [requestId, itemId, modelName]
+      required: [requestId, itemId, status]
       properties:
         requestId:
           type: string

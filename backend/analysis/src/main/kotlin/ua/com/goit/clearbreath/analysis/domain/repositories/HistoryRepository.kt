@@ -12,21 +12,11 @@ import java.util.UUID
 @Repository
 interface HistoryRepository : ReactiveCrudRepository<HistoryEntity, UUID> {
 
-    @Query(
-        """
-        SELECT id, processing_status, source_type, recommendation, created_at, updated_at, user_id
-        FROM history
-        WHERE user_id = :userId
-        ORDER BY created_at DESC
-        LIMIT :#{#pageable.pageSize}
-        OFFSET :#{#pageable.offset}
-    """
-    )
-    fun findPage(pageable: Pageable, user: UUID): Flux<HistoryEntity>
+    fun findAllByUserOrderByCreatedAtDesc(user: UUID, pageable: Pageable): Flux<HistoryEntity>
 
     @Query(
         """
-        SELECT COUNT(id) FROM history WHERE user_id = :user
+        SELECT COUNT(h.request_id) FROM history as h WHERE h.user_id = :user
     """
     )
     fun countAll(user: UUID): Mono<Long>

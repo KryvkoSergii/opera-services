@@ -22,7 +22,7 @@ class DefaultHistoryService(
         val userId: UUID = userService.getCurrentUser().userId ?: throw IllegalStateException("User ID is null")
 
         val historyList = historyRepository
-            .findPage(pagination, userId)
+            .findAllByUserOrderByCreatedAtDesc(userId, pagination)
             .collectList()
             .awaitSingle()
 
@@ -30,11 +30,20 @@ class DefaultHistoryService(
             .mapNotNull { it.requestId }
             .distinct()
 
+        if (requestIds.isEmpty()) {
+            return PaginatedRequestHistory(
+                total = 0,
+                page = page,
+                perPage = perPage,
+                items = emptyList()
+            )
+        }
+
         val resultItemsByRequestId = resultItemRepository
-                .findByRequestsId(requestIds)
-                .collectList()
-                .awaitSingle()
-                .groupBy { it.requestId }
+            .findByRequestsId(requestIds)
+            .collectList()
+            .awaitSingle()
+            .groupBy { it.requestId }
 
         val content = historyList.map { history ->
             historyMapper.mapHistory(history, resultItemsByRequestId[history.requestId].orEmpty())

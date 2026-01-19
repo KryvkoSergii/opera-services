@@ -1,43 +1,51 @@
-import { useNavigate, Link as RouterLink } from "react-router-dom";
-import { Button, Divider, Link, Stack, TextField } from "@mui/material";
-import { useForm } from "react-hook-form";
-import { PageCard } from "../components/PageCard";
+import {useNavigate, Link as RouterLink} from "react-router-dom";
+import {Button, Divider, Link, Stack, TextField} from "@mui/material";
+import {useForm} from "react-hook-form";
+import {PageCard} from "../components/PageCard";
+import {AuthClient, type UserLoginRequest} from "../api/auth.client";
+import {setToken} from "../auth/token";
 
 type LoginForm = { email: string; password: string };
+const authClient = new AuthClient({baseURL: import.meta.env.VITE_API_BASE_URL});
 
 export function LoginPage() {
     const nav = useNavigate();
-    const { register, handleSubmit, formState: { isSubmitting } } = useForm<LoginForm>({
-        defaultValues: { email: "", password: "" },
+    const {register, handleSubmit, formState: {isSubmitting}} = useForm<LoginForm>({
+        defaultValues: {email: "", password: ""},
     });
 
-    const onSubmit = async (_: LoginForm) => {
-        // TODO: call auth API
+    const onSubmit = async (form: LoginForm) => {
+        const response = await authClient.loginUser({email: form.email, password: form.password} as UserLoginRequest)
+
+        if (response.token) {
+            setToken(response.token);
+        }
+
         nav("/records");
     };
 
     return (
-        <Stack sx={{ maxWidth: 520, mx: "auto", mt: { xs: 2, sm: 5 } }} spacing={2}>
+        <Stack sx={{maxWidth: 520, mx: "auto", mt: {xs: 2, sm: 5}}} spacing={2}>
             <PageCard title="Login" subtitle="Sign in to record and review analyses">
                 <Stack spacing={2} component="form" onSubmit={handleSubmit(onSubmit)}>
                     <TextField
                         label="Email"
                         type="email"
                         autoComplete="email"
-                        {...register("email", { required: true })}
+                        {...register("email", {required: true})}
                     />
                     <TextField
                         label="Password"
                         type="password"
                         autoComplete="current-password"
-                        {...register("password", { required: true })}
+                        {...register("password", {required: true})}
                     />
 
                     <Button type="submit" variant="contained" disabled={isSubmitting}>
                         Sign in
                     </Button>
 
-                    <Divider />
+                    <Divider/>
 
                     <Stack direction="row" spacing={1} justifyContent="center">
                         <Link component={RouterLink} to="/register">

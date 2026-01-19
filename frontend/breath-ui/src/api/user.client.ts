@@ -1,4 +1,6 @@
-import axios, { AxiosError, AxiosInstance } from "axios";
+import axios from "axios";
+import type { AxiosInstance, AxiosError } from "axios";
+import {getToken} from "../auth/token";
 
 /** ===== Types from spec ===== */
 
@@ -53,12 +55,10 @@ export class UserClient {
                 baseURL: cfg.baseURL,
             });
 
-        this.getToken = cfg.getToken ?? (() => localStorage.getItem("token"));
-
         // If you pass your own axiosInstance with interceptors — you can remove this part.
         if (!cfg.axiosInstance) {
             this.http.interceptors.request.use((config) => {
-                const token = this.getToken();
+                const token = getToken();
                 if (token) config.headers.Authorization = `Bearer ${token}`;
 
                 config.headers["X-Timezone"] =
