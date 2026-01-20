@@ -18,7 +18,7 @@ import {UserClient, type UserRegisterRequest} from "../api/user.client";
 
 const userClient = new UserClient({baseURL: import.meta.env.VITE_API_BASE_URL});
 
-type Gender = "MALE" | "FEMALE";
+type Gender = "male" | "female";
 type RegisterForm = {
     login: string;
     password: string;

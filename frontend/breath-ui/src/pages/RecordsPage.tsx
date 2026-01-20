@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import {useEffect, useMemo, useRef, useState} from "react";
 import {
     Alert,
     Box,
@@ -16,14 +16,17 @@ import MicIcon from "@mui/icons-material/Mic";
 import StopIcon from "@mui/icons-material/Stop";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import SendIcon from "@mui/icons-material/Send";
-import { PageCard } from "../components/PageCard";
-import { StatusChip, type JobStatus } from "../components/StatusChip";
-import { useTranslation } from "react-i18next";
+import {PageCard} from "../components/PageCard";
+import {StatusChip, type JobStatus} from "../components/StatusChip";
+import {useTranslation} from "react-i18next";
+import {AnalysisClient} from "../api/core.client";
 
 type SourceType = "MICROPHONE" | "STETHOSCOPE";
 
+const analysisClient = new AnalysisClient({baseURL: import.meta.env.VITE_API_BASE_URL});
+
 export function RecordsPage() {
-    const { t } = useTranslation();
+    const {t} = useTranslation();
     const [source, setSource] = useState<SourceType>("MICROPHONE");
 
     // recording state
@@ -50,7 +53,8 @@ export function RecordsPage() {
             // stop recorder on unmount
             try {
                 mediaRecorderRef.current?.stop();
-            } catch {}
+            } catch {
+            }
         };
     }, []);
 
@@ -58,7 +62,7 @@ export function RecordsPage() {
         setPickedFile(null);
         setRecordedBlob(null);
 
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({audio: true});
         const recorder = new MediaRecorder(stream);
         mediaRecorderRef.current = recorder;
         chunksRef.current = [];
@@ -70,7 +74,7 @@ export function RecordsPage() {
         recorder.onstop = () => {
             // stop tracks
             stream.getTracks().forEach((t) => t.stop());
-            const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
+            const blob = new Blob(chunksRef.current, {type: recorder.mimeType || "audio/webm"});
             setRecordedBlob(blob);
             setIsRecording(false);
         };
@@ -93,32 +97,44 @@ export function RecordsPage() {
     };
 
     const send = async () => {
-        const hasAudio = !!pickedFile || !!recordedBlob;
-        if (!hasAudio) {
-            setStatus("FAILED");
-            setStatusText(t("records.needAudio"));
-            return;
+            const hasAudio = !!pickedFile || !!recordedBlob;
+            if (!hasAudio) {
+                setStatus("FAILED");
+                setStatusText(t("records.needAudio"));
+                return;
+            }
+
+            setStatus("UPLOADING");
+            setStatusText(t("records.uploading"));
+
+            // TODO: build multipart and call backend
+            // const form = new FormData();
+            // form.append("source", source);
+            // form.append("file", pickedFile ?? new File([recordedBlob!], "record.webm", {type: recordedBlob!.type}));
+
+            let response = await analysisClient.createAnalysisRequest({
+                sourceType : source,
+                audioFile: pickedFile ?? new File([recordedBlob!], "record.webm", {type: recordedBlob!.type})
+            });
+
+            setStatus(response.status);
+            setStatusText(t(`records.${response.status.toLowerCase()}`));
+            //
+            // setStatus(reponse.status);
+            // setStatusText(t("records.uploading"));
+            //
+            // await new Promise((r) => setTimeout(r, 800));
+            //
+            // setStatus("PROCESSING");
+            // setStatusText(t("records.processing"));
+            //
+            // // TODO: poll/SSE status updates
+            // await new Promise((r) => setTimeout(r, 1200));
+            //
+            // setStatus("DONE");
+            // setStatusText(t("records.completed"));
         }
-
-        setStatus("UPLOADING");
-        setStatusText(t("records.uploading"));
-
-        // TODO: build multipart and call backend
-        // const form = new FormData();
-        // form.append("source", source);
-        // form.append("file", pickedFile ?? new File([recordedBlob!], "record.webm", { type: recordedBlob!.type }));
-
-        await new Promise((r) => setTimeout(r, 800));
-
-        setStatus("PROCESSING");
-        setStatusText(t("records.processing"));
-
-        // TODO: poll/SSE status updates
-        await new Promise((r) => setTimeout(r, 1200));
-
-        setStatus("DONE");
-        setStatusText(t("records.completed"));
-    };
+    ;
 
     return (
         <PageCard
@@ -134,7 +150,7 @@ export function RecordsPage() {
                     {t("records.usageWarning")}
                 </Alert>
 
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems={{ sm: "center" }}>
+                <Stack direction={{xs: "column", sm: "row"}} spacing={1.5} alignItems={{sm: "center"}}>
                     <FormControl fullWidth>
                         <InputLabel id="source-label">{t("records.source")}</InputLabel>
                         <Select
@@ -148,12 +164,12 @@ export function RecordsPage() {
                         </Select>
                     </FormControl>
 
-                    <Stack direction="row" spacing={1} sx={{ width: { xs: "100%", sm: "auto" } }}>
+                    <Stack direction="row" spacing={1} sx={{width: {xs: "100%", sm: "auto"}}}>
                         {!isRecording ? (
                             <Button
                                 fullWidth
                                 variant="contained"
-                                startIcon={<MicIcon />}
+                                startIcon={<MicIcon/>}
                                 onClick={startRecording}
                             >
                                 {t("records.record")}
@@ -162,7 +178,7 @@ export function RecordsPage() {
                             <Button
                                 fullWidth
                                 variant="contained"
-                                startIcon={<StopIcon />}
+                                startIcon={<StopIcon/>}
                                 onClick={stopRecording}
                             >
                                 {t("records.stop")}
@@ -171,17 +187,17 @@ export function RecordsPage() {
                     </Stack>
                 </Stack>
 
-                <Divider />
+                <Divider/>
 
                 <Stack spacing={1}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                    <Typography variant="subtitle1" sx={{fontWeight: 800}}>
                         {t("records.uploadTitle")}
                     </Typography>
 
                     <Button
                         component="label"
                         variant="outlined"
-                        startIcon={<UploadFileIcon />}
+                        startIcon={<UploadFileIcon/>}
                     >
                         {t("records.chooseFile")}
                         <input
@@ -197,12 +213,12 @@ export function RecordsPage() {
                     </Typography>
                 </Stack>
 
-                <Divider />
+                <Divider/>
 
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems={{ sm: "center" }}>
+                <Stack direction={{xs: "column", sm: "row"}} spacing={1.5} alignItems={{sm: "center"}}>
                     <Button
                         variant="contained"
-                        startIcon={<SendIcon />}
+                        startIcon={<SendIcon/>}
                         onClick={send}
                         disabled={status === "UPLOADING" || status === "PROCESSING"}
                     >
@@ -210,17 +226,17 @@ export function RecordsPage() {
                     </Button>
 
                     <Stack direction="row" spacing={1} alignItems="center">
-                        <StatusChip status={status} />
+                        <StatusChip status={status}/>
                         <Typography variant="body2" color="text.secondary">
                             {statusText}
                         </Typography>
                     </Stack>
 
-                    <Box sx={{ flex: 1 }} />
+                    <Box sx={{flex: 1}}/>
 
                     {(status === "UPLOADING" || status === "PROCESSING") && (
-                        <Box sx={{ width: { xs: "100%", sm: 220 } }}>
-                            <LinearProgress />
+                        <Box sx={{width: {xs: "100%", sm: 220}}}>
+                            <LinearProgress/>
                         </Box>
                     )}
                 </Stack>
