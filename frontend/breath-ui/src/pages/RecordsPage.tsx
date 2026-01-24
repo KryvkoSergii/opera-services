@@ -171,6 +171,7 @@ export default function RecordsPage() {
                                 variant="contained"
                                 startIcon={<MicIcon/>}
                                 onClick={startRecording}
+                                disabled={source !== "MICROPHONE"}
                             >
                                 {t("records.record")}
                             </Button>
@@ -180,6 +181,7 @@ export default function RecordsPage() {
                                 variant="contained"
                                 startIcon={<StopIcon/>}
                                 onClick={stopRecording}
+                                disabled={source !== "MICROPHONE"}
                             >
                                 {t("records.stop")}
                             </Button>
