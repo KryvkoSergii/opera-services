@@ -25,7 +25,7 @@ type SourceType = "MICROPHONE" | "STETHOSCOPE";
 
 const analysisClient = new AnalysisClient({baseURL: import.meta.env.VITE_API_BASE_URL});
 
-export function RecordsPage() {
+export default function RecordsPage() {
     const {t} = useTranslation();
     const [source, setSource] = useState<SourceType>("MICROPHONE");
 

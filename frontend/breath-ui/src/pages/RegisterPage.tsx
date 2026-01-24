@@ -1,4 +1,6 @@
 import {useNavigate, Link as RouterLink} from "react-router-dom";
+import { useEffect } from "react";
+import { getToken } from "../auth/token";
 import {
     Button,
     Divider,
@@ -27,8 +29,14 @@ type RegisterForm = {
 };
 
 
-export function RegisterPage() {
+export default function RegisterPage() {
     const nav = useNavigate();
+
+    useEffect(() => {
+        if (getToken()) {
+            nav("/records", { replace: true });
+        }
+    }, [nav]);
     const {register, handleSubmit, watch, formState: {isSubmitting, errors}} = useForm<RegisterForm>({
         defaultValues: {login: "", password: "", passwordRepeat: ""},
     });

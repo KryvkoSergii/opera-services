@@ -1,12 +1,12 @@
 import i18n from "i18next";
-import { initReactI18next } from "react-i18next";
+import {initReactI18next} from "react-i18next";
 
 const resources = {
     en: {
         translation: {
-            app: { title: "Breath Analysis", beta: "beta" },
-            nav: { records: "Records", history: "History", logout: "Logout" },
-            common: { ok: "OK", optional: "optional" },
+            app: {title: "Breath Analysis", beta: "beta"},
+            nav: {records: "Records", history: "History", logout: "Logout"},
+            common: {ok: "OK", optional: "optional"},
             cookie: {
                 text: "This website uses cookies / local storage to keep you signed in and improve your experience.",
             },
@@ -18,6 +18,9 @@ const resources = {
                 password: "Password",
                 submit: "Sign in",
                 create: "Create account",
+                error: "Invalid email or password",
+                retry: "Failed attempt. Please try again",
+                signing: "Signing in..."
             },
 
             register: {
@@ -82,9 +85,9 @@ const resources = {
     },
     uk: {
         translation: {
-            app: { title: "Діагностика дихання", beta: "beta" },
-            nav: { records: "Записи", history: "Історія", logout: "Вийти" },
-            common: { ok: "OK", optional: "опційно" },
+            app: {title: "Діагностика дихання", beta: "beta"},
+            nav: {records: "Записи", history: "Історія", logout: "Вийти"},
+            common: {ok: "OK", optional: "опційно"},
             cookie: {
                 text: "Сайт використовує cookies / local storage для збереження сесії та покращення досвіду.",
             },
@@ -92,10 +95,13 @@ const resources = {
             login: {
                 title: "Вхід",
                 subtitle: "Увійдіть, щоб записувати та переглядати аналізи",
-                email: "Емейл",
+                email: "Електронна пошта",
                 password: "Пароль",
                 submit: "Увійти",
                 create: "Створити акаунт",
+                error: "Невірний емейл або пароль",
+                retry: "Невдала спроба. Спробуйте ще раз",
+                signing: "Вхід..."
             },
 
             register: {
@@ -164,7 +170,7 @@ i18n.use(initReactI18next).init({
     resources,
     lng: "uk",
     fallbackLng: "en",
-    interpolation: { escapeValue: false },
+    interpolation: {escapeValue: false},
 });
 
 export default i18n;

@@ -64,7 +64,7 @@ function getLocalizedAdvice(status: Severity) {
     return "history.medium_risk"
 }
 
-export function HistoryPage() {
+export default function HistoryPage() {
     const {t} = useTranslation();
     const nav = useNavigate();
     const [rows, setRows] = useState<Row[]>([]);
@@ -181,12 +181,6 @@ export function HistoryPage() {
                                         </Tooltip>
                                     ))}
                                 </TableCell>
-
-                                {/*<TableCell sx={{maxWidth: 420}}>*/}
-                                {/*    <Typography variant="body2" color="text.secondary">*/}
-                                {/*        {r.recommendation}*/}
-                                {/*    </Typography>*/}
-                                {/*</TableCell>*/}
                             </TableRow>
                         ))}
                     </TableBody>
