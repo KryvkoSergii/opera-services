@@ -2,28 +2,26 @@ import axios from "axios";
 import type { AxiosInstance, AxiosError } from "axios";
 import { getToken } from "../auth/token";
 
-/** ===== Types (based on your spec) ===== */
-
 export type SourceType = "microphone" | "stethoscope";
-export type RequestStatus = "NEW" | "UPLOADING" | "UPLOADED" | "PROCESSING" | "DONE" | "FAILED";
+export type RequestStatus = "NEW" | "UPLOADING" | "UPLOADED" | "PROCESSING" | "PARTIAL_DONE" | "DONE" | "FAILED" | "TIMEOUT";
 export type ProbabilityStatus = "high" | "moderate" | "low";
 
 export interface AnalysisCreateResponse {
     requestId: string;
     status: RequestStatus;
-    requested: string; // date-time
+    requested: string;
 }
 
 export interface ModelDetail {
     disease?: string;
     details: string;
     status: ProbabilityStatus;
-    probability?: number; // 0..1
+    probability?: number;
 }
 
 export interface HistoryItem {
     requestId: string;
-    requested: string; // date-time
+    requested: string;
     type: SourceType;
     recommendation?: string;
     status: RequestStatus;
@@ -41,7 +39,11 @@ export interface ErrorResponse {
     message?: string;
 }
 
-/** ===== Client ===== */
+export interface StatusEvent {
+    requestId: string;
+    status: RequestStatus;
+    timestamp: string;
+}
 
 export interface AnalysisClientConfig {
     baseURL: string;                // e.g. import.meta.env.VITE_API_BASE_URL
@@ -219,29 +221,6 @@ export class AnalysisClient {
     }
 }
 
-/** ===== SSE parsing ===== */
-
-function parseSseChunk(chunk: string): { event?: string; data?: string } | null {
-    // Lines: event: name, data: ....
-    // We only need event + concatenated data lines
-    const lines = chunk.split("\n").map((l) => l.trimEnd());
-    let event: string | undefined;
-    const dataLines: string[] = [];
-
-    for (const line of lines) {
-        if (line.startsWith("event:")) {
-            event = line.slice("event:".length).trim();
-        } else if (line.startsWith("data:")) {
-            dataLines.push(line.slice("data:".length).trim());
-        }
-    }
-
-    if (!event && dataLines.length === 0) return null;
-    return { event, data: dataLines.join("\n") };
-}
-
-/** ===== Error mapping ===== */
-
 function toApiError(e: unknown): Error {
     if (!axios.isAxiosError(e)) return e instanceof Error ? e : new Error("Unknown error");
 
@@ -254,12 +233,9 @@ function toApiError(e: unknown): Error {
         (status ? `HTTP ${status}` : "Network error");
 
     const err = new Error(message);
-    // @ts-expect-error attach status for UI if needed
     err.status = status;
     return err;
 }
-
-/** ===== Default singleton (optional) ===== */
 
 export const analysisClient = new AnalysisClient({
     baseURL: import.meta.env.VITE_API_BASE_URL ?? "",

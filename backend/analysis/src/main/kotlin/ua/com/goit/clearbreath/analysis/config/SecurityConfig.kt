@@ -37,7 +37,7 @@ class SecurityConfig(
             .httpBasic { it.disable() }
             .formLogin { it.disable() }
             .authorizeExchange {
-                it.pathMatchers("/v1/auth/**", "/v1/users/register", "/actuator/health").permitAll()
+                it.pathMatchers("/v1/auth/**", "/v1/users/register", "/actuator/health", "/v1/analyses/*/events").permitAll()
                     .anyExchange().authenticated()
             }
             .addFilterAt(authWebFilter, SecurityWebFiltersOrder.AUTHENTICATION)

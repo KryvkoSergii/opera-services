@@ -81,7 +81,7 @@ components:
 
     RequestStatus:
       type: string
-      enum: [ NEW, UPLOADING, UPLOADED, PROCESSING, DONE, FAILED ]
+      enum: [ NEW, UPLOADING, UPLOADED, PROCESSING, DONE, PARTIAL_DONE, FAILED ]
       description: Status of the analysis request
 
     ProbabilityStatus:

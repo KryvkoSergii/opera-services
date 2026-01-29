@@ -5,6 +5,7 @@ enum class ProcessingStatusEntity(val dbValue: String) {
     UPLOADING("UPLOADING"),
     UPLOADED("UPLOADED"),
     PROCESSING("PROCESSING"),
+    PARTIAL_DONE("PARTIAL_DONE"),
     DONE("DONE"),
     FAILED("FAILED");
 }

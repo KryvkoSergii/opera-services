@@ -15,11 +15,7 @@ RUN ln -sf /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
 COPY contract /app/contract
 COPY backend/analysis /app
 
-RUN --mount=type=cache,target=/home/gradle/.gradle \
-    ./gradlew --no-daemon dependencies || true
-
-RUN --mount=type=cache,target=/home/gradle/.gradle \
-    ./gradlew --no-daemon clean bootJar -x test --info --stacktrace
+RUN ./gradlew --no-daemon clean bootJar -x test --info --stacktrace
 
 # ---------- runtime stage ----------
 FROM eclipse-temurin:21-jre-jammy

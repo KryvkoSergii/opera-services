@@ -12,11 +12,14 @@ import ua.com.goit.clearbreath.analysis.domain.models.HistoryProcessingItem
 import ua.com.goit.clearbreath.analysis.domain.models.ProcessingStatusEntity
 import ua.com.goit.clearbreath.analysis.domain.repositories.HistoryProcessingItemRepository
 import ua.com.goit.clearbreath.analysis.domain.repositories.HistoryRepository
+import ua.com.goit.clearbreath.analysis.eventhubs.RequestEventsHub
+import ua.com.goit.clearbreath.analysis.eventhubs.RequestStatusEvent
 import ua.com.goit.clearbreath.analysis.events.InferenceStartEventPayload
 import ua.com.goit.clearbreath.analysis.infra.QueueEventPublisher
 import ua.com.goit.clearbreath.analysis.infra.StorageRepository
 import ua.com.goit.clearbreath.analysis.utils.DiskUtil
 import ua.com.goit.clearbreath.analysis.utils.FileConvertingUtil
+import java.util.UUID
 
 @Component
 class TaskAsyncProcessor(
@@ -24,7 +27,8 @@ class TaskAsyncProcessor(
     private val historyRepository: HistoryRepository,
     private val storageRepository: StorageRepository,
     private val publisher: QueueEventPublisher,
-    private val sourceMapper: SourceTypeMapper
+    private val sourceMapper: SourceTypeMapper,
+    private val eventsHub: RequestEventsHub,
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -34,7 +38,7 @@ class TaskAsyncProcessor(
     fun on(event: ConvertFileEvent) {
         val requestId = event.requestId
         val outputFilePattern = "${DiskUtil.CONVERTED_DIRECTORY}/${requestId}_%03d.wav"
-
+        publish(requestId, ProcessingStatusEntity.PROCESSING, "Converting started")
         try {
             FileConvertingUtil.runFfmpeg(event.onLocalDisk.toString(), outputFilePattern)
         } catch (e: Exception) {
@@ -44,7 +48,15 @@ class TaskAsyncProcessor(
                     sourceType = event.source,
                     processingStatus = ProcessingStatusEntity.FAILED
                 )
-            ).subscribe()
+            )
+                .doOnNext {
+                    publish(requestId, ProcessingStatusEntity.FAILED, "File converting failed")
+                }
+                .doOnError { ex ->
+                    log.error("Failed to persist FAILED status for requestId={}", requestId, ex)
+                }
+                .subscribe()
+
             log.error("File converting failed requestId={}", requestId, e)
             return
         }
@@ -111,17 +123,33 @@ class TaskAsyncProcessor(
             .then(
                 itemRepository.existsByRequestIdAndProcessingStatusNot(requestId, ProcessingStatusEntity.FAILED)
                     .flatMap { hasNotFailed ->
-                        if (hasNotFailed) Mono.empty()
-                        else historyRepository.save(
-                            HistoryEntity(
-                                requestId = requestId,
-                                sourceType = event.source,
-                                processingStatus = ProcessingStatusEntity.FAILED
+                        if (hasNotFailed) {
+                            Mono.empty()
+                        } else {
+                            historyRepository.save(
+                                HistoryEntity(
+                                    requestId = requestId,
+                                    sourceType = event.source,
+                                    processingStatus = ProcessingStatusEntity.FAILED
+                                )
                             )
-                        ).then()
+                                .doOnNext {
+                                    publish(requestId, ProcessingStatusEntity.FAILED, "All items failed")
+                                }
+                                .then()
+                        }
                     }
             )
             .subscribe()
     }
 
+    private fun publish(requestId: UUID, status: ProcessingStatusEntity, message: String) {
+        eventsHub.publish(
+            RequestStatusEvent(
+                requestId = requestId,
+                status = status,
+                message = message
+            )
+        )
+    }
 }

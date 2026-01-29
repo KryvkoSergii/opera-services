@@ -1,20 +1,23 @@
-import { Chip } from "@mui/material";
+import {Chip} from "@mui/material";
 
-export type JobStatus = "NEW" | "UPLOADING" | "PROCESSING" | "DONE" | "FAILED";
+const STATUS_COLOR: Record<JobStatus, "success" | "error" | "warning" | "info" | "default"> = {
+    DONE: "success",
+    FAILED: "error",
+    TIMEOUT: "error",
+    PROCESSING: "warning",
+    PARTIAL_DONE: "warning",
+    UPLOADING: "info",
+    NEW: "default",
+};
 
 export function StatusChip({ status }: { status: JobStatus }) {
-    const color =
-        status === "DONE" ? "success" :
-            status === "FAILED" ? "error" :
-                status === "PROCESSING" ? "warning" :
-                    status === "UPLOADING" ? "info" :
-                        "default";
+    const color = STATUS_COLOR[status];
 
     return (
         <Chip
             size="small"
             label={status}
-            color={color as any}
+            color={color}
             variant={color === "default" ? "outlined" : "filled"}
         />
     );

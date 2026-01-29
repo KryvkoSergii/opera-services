@@ -10,6 +10,8 @@ import ua.com.goit.clearbreath.analysis.domain.repositories.EvaluationModelMetad
 import ua.com.goit.clearbreath.analysis.domain.repositories.HistoryItemResultRepository
 import ua.com.goit.clearbreath.analysis.domain.repositories.HistoryProcessingItemRepository
 import ua.com.goit.clearbreath.analysis.domain.repositories.HistoryRepository
+import ua.com.goit.clearbreath.analysis.eventhubs.RequestEventsHub
+import ua.com.goit.clearbreath.analysis.eventhubs.RequestStatusEvent
 import ua.com.goit.clearbreath.analysis.events.EventStatus
 import ua.com.goit.clearbreath.analysis.events.InferenceResultEventPayload
 import java.util.*
@@ -19,7 +21,8 @@ class ResultEventListener(
     private val itemsRepository: HistoryProcessingItemRepository,
     private val historyRepository: HistoryRepository,
     private val resultRepository: HistoryItemResultRepository,
-    private val modelRepository: EvaluationModelMetadataRepository
+    private val modelRepository: EvaluationModelMetadataRepository,
+    private val eventsHub: RequestEventsHub
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -58,7 +61,9 @@ class ResultEventListener(
                             probability = message.probability
                                 ?: return@flatMap Mono.error(IllegalArgumentException("Probability is null for COMPLETED event"))
                         )
-                    )
+                    ).doOnNext {
+                        publish(requestId, ProcessingStatusEntity.PARTIAL_DONE, "Done for chunk")
+                    }
                 }
                 .then()
 
@@ -72,6 +77,9 @@ class ResultEventListener(
                     if (hasNotDone) Mono.empty()
                     else historyRepository.findById(requestId)
                         .flatMap { historyRepository.save(it.copy(processingStatus = ProcessingStatusEntity.DONE)) }
+                        .doOnNext {
+                            publish(requestId, ProcessingStatusEntity.DONE, "Request done")
+                        }
                         .then()
                 }
                 .then()
@@ -101,9 +109,22 @@ class ResultEventListener(
                 } else {
                     historyRepository.findById(requestId)
                         .flatMap { historyRepository.save(it.copy(processingStatus = ProcessingStatusEntity.FAILED)) }
+                        .doOnNext {
+                            publish(requestId, ProcessingStatusEntity.FAILED, "Request done")
+                        }
                         .then()
                 }
             }
             .then()
+    }
+
+    private fun publish(requestId: UUID, status: ProcessingStatusEntity, message: String) {
+        eventsHub.publish(
+            RequestStatusEvent(
+                requestId = requestId,
+                status = status,
+                message = message
+            )
+        )
     }
 }

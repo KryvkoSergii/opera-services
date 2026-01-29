@@ -4,7 +4,7 @@ import {initReactI18next} from "react-i18next";
 const resources = {
     en: {
         translation: {
-            app: {title: "Breath Analysis", beta: "beta"},
+            app: {title: "Breath Analysis", beta: "v.1.0"},
             nav: {records: "Records", history: "History", logout: "Logout"},
             common: {ok: "OK", optional: "optional"},
             cookie: {
@@ -62,7 +62,10 @@ const resources = {
                 uploaded: "Uploaded...",
                 processing: "Processing...",
                 failed: "Failed.",
+                partial_done: "Partially done.",
+                timeout: "Request timed out.",
                 completed: "Completed.",
+                done: "Completed.",
                 needAudio: "Please record audio or select a file before sending.",
             },
 
@@ -85,7 +88,7 @@ const resources = {
     },
     uk: {
         translation: {
-            app: {title: "Діагностика дихання", beta: "beta"},
+            app: {title: "Діагностика дихання", beta: "v.1.0"},
             nav: {records: "Записи", history: "Історія", logout: "Вийти"},
             common: {ok: "OK", optional: "опційно"},
             cookie: {
@@ -142,8 +145,11 @@ const resources = {
                 uploading: "Завантаження...",
                 uploaded: "Завантажено...",
                 processing: "Обробка...",
+                partial_done: "Частково готово.",
+                timeout: "Час очікування запиту вичерпано.",
                 failed: "Помилка.",
                 completed: "Готово.",
+                done: "Готово.",
                 needAudio: "Спочатку запишіть аудіо або оберіть файл.",
             },
 

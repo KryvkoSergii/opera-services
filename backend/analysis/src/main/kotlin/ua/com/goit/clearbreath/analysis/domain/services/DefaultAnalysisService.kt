@@ -6,6 +6,8 @@ import ua.com.goit.clearbreath.analysis.domain.models.HistoryEntity
 import ua.com.goit.clearbreath.analysis.domain.models.ProcessingStatusEntity
 import ua.com.goit.clearbreath.analysis.domain.models.SourceTypeEntity
 import ua.com.goit.clearbreath.analysis.domain.repositories.HistoryRepository
+import ua.com.goit.clearbreath.analysis.eventhubs.RequestEventsHub
+import ua.com.goit.clearbreath.analysis.eventhubs.RequestStatusEvent
 import ua.com.goit.clearbreath.analysis.tasks.ConvertFileEvent
 import ua.com.goit.clearbreath.analysis.tasks.EventProducer
 import ua.com.goit.clearbreath.analysis.utils.DiskUtil
@@ -15,7 +17,8 @@ import java.nio.file.Path
 class DefaultAnalysisService(
     private val repository: HistoryRepository,
     private val userService: UserService,
-    private val eventProducer: EventProducer
+    private val eventProducer: EventProducer,
+    private val eventsHub: RequestEventsHub,
 ) : AnalysisService {
 
     override suspend fun startAnalysis(
@@ -26,7 +29,6 @@ class DefaultAnalysisService(
         val userId = userService.getCurrentUser().userId
             ?: throw IllegalStateException("User ID is null")
 
-        //TODO switch to outbox pattern to ensure event delivery
         val saved = repository.save(
             HistoryEntity(
                 processingStatus = ProcessingStatusEntity.NEW,
@@ -50,11 +52,13 @@ class DefaultAnalysisService(
                 )
             ).awaitSingle()
 
+            eventsHub.publish(RequestStatusEvent(requestId, ProcessingStatusEntity.UPLOADED, "File uploaded"))
+
             ConvertFileEvent(requestId, onLocalDisk, sourceType).let {
                 eventProducer.publishEvent(it)
             }
 
-            return updated;
+            return updated
         } catch (ex: Exception) {
             repository.save(
                 saved.copy(

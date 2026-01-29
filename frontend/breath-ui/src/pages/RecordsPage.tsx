@@ -19,11 +19,54 @@ import SendIcon from "@mui/icons-material/Send";
 import {PageCard} from "../components/PageCard";
 import {StatusChip, type JobStatus} from "../components/StatusChip";
 import {useTranslation} from "react-i18next";
-import {AnalysisClient} from "../api/core.client";
+import {AnalysisClient, type StatusEvent, type RequestStatus} from "../api/core.client";
 
 type SourceType = "MICROPHONE" | "STETHOSCOPE";
 
 const analysisClient = new AnalysisClient({baseURL: import.meta.env.VITE_API_BASE_URL});
+
+function useRequestSse(requestId?: string) {
+    const [event, setEvent] = useState<StatusEvent | null>(null);
+    const [connected, setConnected] = useState(false);
+    const esRef = useRef<EventSource | null>(null);
+
+    useEffect(() => {
+        esRef.current?.close();
+        esRef.current = null;
+        setConnected(false);
+        setEvent(null);
+
+        if (!requestId) return;
+
+        const url = `${import.meta.env.VITE_API_BASE_URL}/v1/analyses/${encodeURIComponent(requestId)}/events`;
+        const es = new EventSource(url);
+        esRef.current = es;
+
+        es.onopen = () => setConnected(true);
+        es.onerror = () => setConnected(false);
+
+        es.addEventListener("status", (e: MessageEvent) => {
+            try {
+                setEvent(JSON.parse(e.data) as StatusEvent);
+            } catch (err) {
+                console.error("Bad SSE payload", err);
+            }
+        });
+
+        return () => {
+            es.close();
+            esRef.current = null;
+        };
+    }, [requestId]);
+
+    const close = () => {
+        esRef.current?.close();
+        esRef.current = null;
+        setConnected(false);
+    };
+
+    return { event, connected, close };
+}
 
 export default function RecordsPage() {
     const {t} = useTranslation();
@@ -35,10 +78,8 @@ export default function RecordsPage() {
     const chunksRef = useRef<BlobPart[]>([]);
     const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
 
-    // file upload state
     const [pickedFile, setPickedFile] = useState<File | null>(null);
 
-    // job status
     const [status, setStatus] = useState<JobStatus>("NEW");
     const [statusText, setStatusText] = useState<string>("");
 
@@ -47,6 +88,9 @@ export default function RecordsPage() {
         if (recordedBlob) return `Recorded audio (${Math.round(recordedBlob.size / 1024)} KB)`;
         return t("records.noAudio");
     }, [pickedFile, recordedBlob]);
+
+    const [activeRequestId, setActiveRequestId] = useState<string | undefined>(undefined);
+    const { event, connected, close } = useRequestSse(activeRequestId);
 
     useEffect(() => {
         return () => {
@@ -57,6 +101,30 @@ export default function RecordsPage() {
             }
         };
     }, []);
+
+    useEffect(() => {
+        if (!event) return;
+
+        setStatus(event.status);
+        setStatusText(t(`records.${event.status.toLowerCase()}`));
+
+        if (event.status === "DONE" || event.status === "FAILED") {
+            close();
+        }
+    }, [event, close]);
+
+    useEffect(() => {
+        if (!activeRequestId) return;
+
+        const timer = setTimeout(() => {
+            setStatus("TIMEOUT" as RequestStatus);
+            setStatusText(t("records.timeout"));
+            close();
+            setActiveRequestId(undefined);
+        }, 5 * 60 * 1000);
+
+        return () => clearTimeout(timer);
+    }, [activeRequestId, close, t]);
 
     const startRecording = async () => {
         setPickedFile(null);
@@ -107,34 +175,18 @@ export default function RecordsPage() {
             setStatus("UPLOADING");
             setStatusText(t("records.uploading"));
 
-            // TODO: build multipart and call backend
-            // const form = new FormData();
-            // form.append("source", source);
-            // form.append("file", pickedFile ?? new File([recordedBlob!], "record.webm", {type: recordedBlob!.type}));
-
             let response = await analysisClient.createAnalysisRequest({
-                sourceType : source,
+                sourceType: source,
                 audioFile: pickedFile ?? new File([recordedBlob!], "record.webm", {type: recordedBlob!.type})
             });
 
             setStatus(response.status);
             setStatusText(t(`records.${response.status.toLowerCase()}`));
-            //
-            // setStatus(reponse.status);
-            // setStatusText(t("records.uploading"));
-            //
-            // await new Promise((r) => setTimeout(r, 800));
-            //
-            // setStatus("PROCESSING");
-            // setStatusText(t("records.processing"));
-            //
-            // // TODO: poll/SSE status updates
-            // await new Promise((r) => setTimeout(r, 1200));
-            //
-            // setStatus("DONE");
-            // setStatusText(t("records.completed"));
-        }
-    ;
+
+            close();
+
+            setActiveRequestId(response.requestId);
+        };
 
     return (
         <PageCard
