@@ -92,30 +92,4 @@ export default function LoginPage() {
             </PageCard>
         </Stack>
     );
-    //
-    // return (
-    //     <form onSubmit={onSubmit}>
-    //         <Stack spacing={2} sx={{maxWidth: 420}}>
-    //             {error && <Alert severity="error">{error}</Alert>}
-    //
-    //             <TextField
-    //                 label="Email"
-    //                 value={email}
-    //                 onChange={(e) => setEmail(e.target.value)}
-    //                 autoComplete="email"
-    //             />
-    //             <TextField
-    //                 label="Пароль"
-    //                 type="password"
-    //                 value={password}
-    //                 onChange={(e) => setPassword(e.target.value)}
-    //                 autoComplete="current-password"
-    //             />
-    //
-    //             <Button type="submit" variant="contained" disabled={loading}>
-    //                 {loading ? "Вхід..." : "Увійти"}
-    //             </Button>
-    //         </Stack>
-    //     </form>
-    // );
 }

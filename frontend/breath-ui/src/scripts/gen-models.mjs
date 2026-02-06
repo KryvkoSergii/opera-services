@@ -3,11 +3,6 @@ import path from "node:path";
 import process from "node:process";
 import fs from "node:fs/promises";
 
-/**
- * Generates TypeScript OpenAPI types into src/services/*.ts
- * + Generates flat model aliases into src/services/*.models.ts
- */
-
 async function findDirUpwards(startDir, dirName) {
     let current = startDir;
 
@@ -62,12 +57,6 @@ async function generateTypes(input, output) {
     console.log(`✅ OpenAPI types generated: ${output}`);
 }
 
-/**
- * Generate "flat" model aliases file:
- *   user.models.ts with exports like Gender, UserRegisterRequest, ...
- *
- * This version is "spec-aware" only via a small per-service map.
- */
 async function generateModels(serviceName, typesOutFile) {
     const base = path.basename(typesOutFile, ".ts"); // auth/core/user
     const modelsOutFile = typesOutFile.replace(/\.ts$/, ".models.ts");
@@ -141,7 +130,6 @@ async function generateService(serviceName, specFile) {
 
 const OPENAPI_SPEC_ROOT = await findDirUpwards(process.cwd(), "contract");
 
-// sequential (stable)
 await generateService("auth", path.resolve(OPENAPI_SPEC_ROOT, "auth-api.yaml"));
 await generateService("core", path.resolve(OPENAPI_SPEC_ROOT, "core-api.yaml"));
 await generateService("user", path.resolve(OPENAPI_SPEC_ROOT, "user-api.yaml"));

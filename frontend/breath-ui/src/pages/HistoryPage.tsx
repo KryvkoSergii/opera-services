@@ -122,7 +122,6 @@ export default function HistoryPage() {
         };
     }, [page, perPage]);
 
-    // Empty state тільки коли реально нічого нема взагалі
     if (total === 0) {
         return (
             <PageCard title={t("history.title")} subtitle={t("history.subtitle")}>

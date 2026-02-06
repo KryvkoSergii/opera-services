@@ -6,10 +6,6 @@ type Props = {
     children: React.ReactElement;
 };
 
-/**
- * Route guard: redirects to /login when there is no token.
- * Keeps the original location in state so LoginPage can redirect back.
- */
 export function RequireAuth({ children }: Props) {
     const location = useLocation();
     const token = getToken();

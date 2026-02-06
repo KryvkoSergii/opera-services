@@ -2,8 +2,6 @@ import axios from "axios";
 import type { AxiosInstance, AxiosError, AxiosRequestConfig } from "axios";
 import { getToken } from "../auth/token";
 
-/** ===== Types ===== */
-
 export type Gender = "male" | "female";
 
 export interface UserRegisterRequest {
@@ -23,8 +21,6 @@ export interface ErrorResponse {
     message?: string;
 }
 
-/** ===== Client ===== */
-
 export interface UserClientConfig {
     baseURL: string;
     axiosInstance?: AxiosInstance;
@@ -40,7 +36,6 @@ export class UserClient {
                 baseURL: cfg.baseURL,
             });
 
-        // загальні заголовки (БЕЗ Authorization)
         this.http.interceptors.request.use((config) => {
             config.headers["X-Timezone"] =
                 Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
@@ -48,7 +43,6 @@ export class UserClient {
         });
     }
 
-    /** helper для auth header */
     private withAuth(config: AxiosRequestConfig = {}): AxiosRequestConfig {
         const token = getToken();
         if (!token) return config;
@@ -62,10 +56,6 @@ export class UserClient {
         };
     }
 
-    /**
-     * POST /v1/users/register
-     * ❌ БЕЗ Authorization
-     */
     async registerUser(
         body: UserRegisterRequest
     ): Promise<UserRegisterResponse> {
@@ -83,10 +73,6 @@ export class UserClient {
         }
     }
 
-    /**
-     * GET /v1/users/me
-     * ✅ З Authorization
-     */
     async getMeUserDetails(): Promise<UserRegisterResponse> {
         try {
             const res = await this.http.get<UserRegisterResponse>(

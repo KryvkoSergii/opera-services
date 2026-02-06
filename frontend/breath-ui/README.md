@@ -1,73 +1,73 @@
-# React + TypeScript + Vite
+# breath-ui \- Frontend Module
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+breath-ui is the frontend module of the Breath project, built with React and TypeScript. It provides the user interface components and pages for interacting with the Breath backend services.
 
-Currently, two official plugins are available:
+## Tech stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- React (SPA)
+- TypeScript
+- JavaScript (tooling)
+- npm (package manager)
+- Build tool: [Vite]
 
-## React Compiler
+## Project structure
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Common layout (adjust to actual structure):
 
-## Expanding the ESLint configuration
+- `src/`
+  - `components/` - reusable UI components
+  - `pages/` or `routes/` - top-level views
+  - `app/` - app related utils
+  - `api/` - REST client.
+  - `auth/` - authentication logic
+  - `scripts/` - supporting scripts (e.g. codegen)
+- `public/` \- static public files
+- `package.json` \- npm scripts and dependencies
+- `tsconfig.json` \- TypeScript configuration
+- `vite.config.*` - bundler config (if applicable)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Prerequisites
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- Node.js \[version] or newer
+- npm \[version] (or yarn/pnpm)
+- Breath backend running (optional but recommended for full functionality)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Installation
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+From the `breath-ui` module directory:
+
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Development
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Start the development server:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run dev
 ```
+
+Then open the port shown in the terminal in a browser.
+
+## Building for production
+
+```bash
+npm run build
+```
+
+The production artifacts will be emitted to the `dist/` or `build/` folder (depending on tooling).
+
+## Linting and formatting
+
+```bash
+npm run lint
+npm run format
+```
+
+## Environment configuration
+
+Create a `.env` file based on `.env.example` (if present). Common variables:
+
+- `VITE_API_BASE_URL` - base URL of the Breath backend (e.g. `http://localhost:8080`)
+- `NODE_ENV` \- environment (development/production)

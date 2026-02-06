@@ -1,9 +1,17 @@
 import axios from "axios";
-import type { AxiosInstance, AxiosError } from "axios";
-import { getToken } from "../auth/token";
+import type {AxiosInstance, AxiosError} from "axios";
+import {getToken} from "../auth/token";
 
 export type SourceType = "microphone" | "stethoscope";
-export type RequestStatus = "NEW" | "UPLOADING" | "UPLOADED" | "PROCESSING" | "PARTIAL_DONE" | "DONE" | "FAILED" | "TIMEOUT";
+export type RequestStatus =
+    "NEW"
+    | "UPLOADING"
+    | "UPLOADED"
+    | "PROCESSING"
+    | "PARTIAL_DONE"
+    | "DONE"
+    | "FAILED"
+    | "TIMEOUT";
 export type ProbabilityStatus = "high" | "moderate" | "low";
 
 export interface AnalysisCreateResponse {
@@ -46,10 +54,10 @@ export interface StatusEvent {
 }
 
 export interface AnalysisClientConfig {
-    baseURL: string;                // e.g. import.meta.env.VITE_API_BASE_URL
-    axiosInstance?: AxiosInstance;  // optionally reuse shared axios
-    getToken?: () => string | null; // default: localStorage.getItem("token")
-    getTimezone?: () => string;     // default: browser timezone
+    baseURL: string;
+    axiosInstance?: AxiosInstance;
+    getToken?: () => string | null;
+    getTimezone?: () => string;
 }
 
 export class AnalysisClient {
@@ -68,7 +76,6 @@ export class AnalysisClient {
             cfg.getTimezone ??
             (() => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
 
-        // If you pass your own axiosInstance with interceptors — you can remove this part.
         if (!cfg.axiosInstance) {
             this.http.interceptors.request.use((config) => {
                 const token = getToken();
@@ -79,10 +86,6 @@ export class AnalysisClient {
         }
     }
 
-    /**
-     * POST /v1/analyses?source-type=...
-     * multipart/form-data: audio-file=<File>
-     */
     async createAnalysisRequest(input: {
         sourceType: SourceType;
         audioFile: File;
@@ -95,8 +98,7 @@ export class AnalysisClient {
                 "/v1/analyses",
                 form,
                 {
-                    params: { "source-type": input.sourceType },
-                    // axios сам поставить multipart boundary; Content-Type вручну не треба
+                    params: {"source-type": input.sourceType},
                 }
             );
 
@@ -106,9 +108,6 @@ export class AnalysisClient {
         }
     }
 
-    /**
-     * GET /v1/analyses?page=&perPage=
-     */
     async listAnalysisRequests(query?: {
         page?: number;
         perPage?: number;
@@ -124,100 +123,6 @@ export class AnalysisClient {
         } catch (e) {
             throw toApiError(e);
         }
-    }
-
-    /**
-     * SSE stream helper (NOT axios).
-     *
-     * Why not axios?
-     *  - SSE is a long-lived streaming response; axios is not great here in browser.
-     *  - EventSource cannot send Authorization header.
-     *
-     * This uses fetch streaming + Authorization header.
-     *
-     * onEvent receives raw "event:" name (or "message") and parsed JSON (if possible).
-     * Returns an AbortController you can abort() to stop streaming.
-     */
-    streamRequestEvents(
-        requestId: string,
-        onEvent: (evt: { event: string; data: unknown; rawData: string }) => void,
-        onError?: (err: unknown) => void
-    ): AbortController {
-        const controller = new AbortController();
-
-        const token = this.getToken();
-        const tz = this.getTimezone();
-
-        const url = new URL(
-            `/v1/analyses/${encodeURIComponent(requestId)}/events`,
-            this.http.defaults.baseURL || window.location.origin
-        );
-
-        // Header X-Timezone exists in spec. With fetch we can send it.
-        // If your backend also accepts timezone via header only, this is correct.
-
-        fetch(url.toString(), {
-            method: "GET",
-            signal: controller.signal,
-            headers: {
-                ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                "X-Timezone": tz,
-                Accept: "text/event-stream",
-            },
-        })
-            .then(async (res) => {
-                if (!res.ok) {
-                    let msg = `HTTP ${res.status}`;
-                    try {
-                        const body = (await res.json()) as ErrorResponse;
-                        msg = body?.message ?? msg;
-                    } catch {}
-                    throw new Error(msg);
-                }
-
-                const reader = res.body?.getReader();
-                if (!reader) throw new Error("SSE: response body is empty");
-
-                const decoder = new TextDecoder("utf-8");
-                let buffer = "";
-
-                while (true) {
-                    const { value, done } = await reader.read();
-                    if (done) break;
-
-                    buffer += decoder.decode(value, { stream: true });
-
-                    // SSE events separated by blank line
-                    let idx;
-                    while ((idx = buffer.indexOf("\n\n")) !== -1) {
-                        const chunk = buffer.slice(0, idx);
-                        buffer = buffer.slice(idx + 2);
-
-                        const parsed = parseSseChunk(chunk);
-                        if (!parsed) continue;
-
-                        const rawData = parsed.data ?? "";
-                        let data: unknown = rawData;
-
-                        // Try JSON parse (your example is JSON)
-                        if (rawData) {
-                            try {
-                                data = JSON.parse(rawData);
-                            } catch {
-                                // keep string
-                            }
-                        }
-
-                        onEvent({ event: parsed.event ?? "message", data, rawData });
-                    }
-                }
-            })
-            .catch((err) => {
-                if (controller.signal.aborted) return;
-                onError?.(err);
-            });
-
-        return controller;
     }
 }
 

@@ -72,7 +72,6 @@ export default function RecordsPage() {
     const {t} = useTranslation();
     const [source, setSource] = useState<SourceType>("MICROPHONE");
 
-    // recording state
     const [isRecording, setIsRecording] = useState(false);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const chunksRef = useRef<BlobPart[]>([]);
@@ -94,7 +93,6 @@ export default function RecordsPage() {
 
     useEffect(() => {
         return () => {
-            // stop recorder on unmount
             try {
                 mediaRecorderRef.current?.stop();
             } catch {
@@ -140,7 +138,6 @@ export default function RecordsPage() {
         };
 
         recorder.onstop = () => {
-            // stop tracks
             stream.getTracks().forEach((t) => t.stop());
             const blob = new Blob(chunksRef.current, {type: recorder.mimeType || "audio/webm"});
             setRecordedBlob(blob);
