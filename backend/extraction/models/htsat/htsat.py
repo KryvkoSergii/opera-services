@@ -72,11 +72,9 @@ class WindowAttention(nn.Module):
         head_dim = dim // num_heads
         self.scale = qk_scale or head_dim ** -0.5
 
-        # define a parameter table of relative position bias
         self.relative_position_bias_table = nn.Parameter(
             torch.zeros((2 * window_size[0] - 1) * (2 * window_size[1] - 1), num_heads))  # 2*Wh-1 * 2*Ww-1, nH
 
-        # get pair-wise relative position index for each token inside the window
         coords_h = torch.arange(self.window_size[0])
         coords_w = torch.arange(self.window_size[1])
         coords = torch.stack(torch.meshgrid([coords_h, coords_w]))  # 2, Wh, Ww
@@ -134,7 +132,6 @@ class WindowAttention(nn.Module):
         return f'dim={self.dim}, window_size={self.window_size}, num_heads={self.num_heads}'
 
 
-# We use the model based on Swintransformer Block, therefore we can use the swin-transformer pretrained model
 class SwinTransformerBlock(nn.Module):
     r""" Swin Transformer Block.
     Args:
@@ -165,7 +162,6 @@ class SwinTransformerBlock(nn.Module):
         self.mlp_ratio = mlp_ratio
         self.norm_before_mlp = norm_before_mlp
         if min(self.input_resolution) <= self.window_size:
-            # if window size is larger than input resolution, we don't partition windows
             self.shift_size = 0
             self.window_size = min(self.input_resolution)
         assert 0 <= self.shift_size < self.window_size, "shift_size must in 0-window_size"
@@ -186,9 +182,8 @@ class SwinTransformerBlock(nn.Module):
         self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
 
         if self.shift_size > 0:
-            # calculate attention mask for SW-MSA
             H, W = self.input_resolution
-            img_mask = torch.zeros((1, H, W, 1))  # 1 H W 1
+            img_mask = torch.zeros((1, H, W, 1))
             h_slices = (slice(0, -self.window_size),
                         slice(-self.window_size, -self.shift_size),
                         slice(-self.shift_size, None))
@@ -211,43 +206,32 @@ class SwinTransformerBlock(nn.Module):
         self.register_buffer("attn_mask", attn_mask)
 
     def forward(self, x):
-        # pdb.set_trace()
         H, W = self.input_resolution
-        # print("H: ", H)
-        # print("W: ", W)
-        # pdb.set_trace()
         B, L, C = x.shape
-        # assert L == H * W, "input feature has wrong size"
 
         shortcut = x
         x = self.norm1(x)
         x = x.view(B, H, W, C)
 
-        # cyclic shift
         if self.shift_size > 0:
             shifted_x = torch.roll(x, shifts=(-self.shift_size, -self.shift_size), dims=(1, 2))
         else:
             shifted_x = x
 
-        # partition windows
         x_windows = window_partition(shifted_x, self.window_size)  # nW*B, window_size, window_size, C
         x_windows = x_windows.view(-1, self.window_size * self.window_size, C)  # nW*B, window_size*window_size, C
 
-        # W-MSA/SW-MSA
         attn_windows, attn = self.attn(x_windows, mask=self.attn_mask)  # nW*B, window_size*window_size, C
 
-        # merge windows
         attn_windows = attn_windows.view(-1, self.window_size, self.window_size, C)
         shifted_x = window_reverse(attn_windows, self.window_size, H, W)  # B H' W' C
 
-        # reverse cyclic shift
         if self.shift_size > 0:
             x = torch.roll(shifted_x, shifts=(self.shift_size, self.shift_size), dims=(1, 2))
         else:
             x = shifted_x
         x = x.view(B, H * W, C)
 
-        # FFN
         x = shortcut + self.drop_path(x)
         x = x + self.drop_path(self.mlp(self.norm2(x)))
 
@@ -285,12 +269,12 @@ class PatchMerging(nn.Module):
 
         x = x.view(B, H, W, C)
 
-        x0 = x[:, 0::2, 0::2, :]  # B H/2 W/2 C
-        x1 = x[:, 1::2, 0::2, :]  # B H/2 W/2 C
-        x2 = x[:, 0::2, 1::2, :]  # B H/2 W/2 C
-        x3 = x[:, 1::2, 1::2, :]  # B H/2 W/2 C
-        x = torch.cat([x0, x1, x2, x3], -1)  # B H/2 W/2 4*C
-        x = x.view(B, -1, 4 * C)  # B H/2*W/2 4*C
+        x0 = x[:, 0::2, 0::2, :]
+        x1 = x[:, 1::2, 0::2, :]
+        x2 = x[:, 0::2, 1::2, :]
+        x3 = x[:, 1::2, 1::2, :]
+        x = torch.cat([x0, x1, x2, x3], -1)
+        x = x.view(B, -1, 4 * C)
 
         x = self.norm(x)
         x = self.reduction(x)
@@ -331,7 +315,6 @@ class BasicLayer(nn.Module):
         self.depth = depth
         self.use_checkpoint = use_checkpoint
 
-        # build blocks
         self.blocks = nn.ModuleList([
             SwinTransformerBlock(dim=dim, input_resolution=input_resolution,
                                  num_heads=num_heads, window_size=window_size,
@@ -343,7 +326,6 @@ class BasicLayer(nn.Module):
                                  norm_layer=norm_layer, norm_before_mlp=norm_before_mlp)
             for i in range(depth)])
 
-        # patch merging layer
         if downsample is not None:
             self.downsample = downsample(input_resolution, dim=dim, norm_layer=norm_layer)
         else:
@@ -369,7 +351,6 @@ class BasicLayer(nn.Module):
         return f"dim={self.dim}, input_resolution={self.input_resolution}, depth={self.depth}"
 
 
-# The Core of HTSAT
 class HTSAT_Swin_Transformer(nn.Module):
     r"""HTSAT based on the Swin Transformer
     Args:
@@ -442,21 +423,16 @@ class HTSAT_Swin_Transformer(nn.Module):
         amin = 1e-10
         top_db = None
         self.interpolate_ratio = 32     # Downsampled ratio
-        # Spectrogram extractor
         self.spectrogram_extractor = Spectrogram(n_fft=config.window_size, hop_length=config.hop_size,
                                                  win_length=config.window_size, window=window, center=center, pad_mode=pad_mode,
                                                  freeze_parameters=True)
-        # Logmel feature extractor
         self.logmel_extractor = LogmelFilterBank(sr=config.sample_rate, n_fft=config.window_size,
                                                  n_mels=config.mel_bins, fmin=config.fmin, fmax=config.fmax, ref=ref, amin=amin, top_db=top_db,
                                                  freeze_parameters=True)
-        # Spec augmenter
         self.spec_augmenter = SpecAugmentation(time_drop_width=64, time_stripes_num=2,
                                                freq_drop_width=8, freq_stripes_num=2) # 2 2
         self.bn0 = nn.BatchNorm2d(self.config.mel_bins)
 
-
-        # split spctrogram into non-overlapping patches
         self.patch_embed = PatchEmbed(
             img_size=self.spec_size, patch_size=self.patch_size, in_chans=self.in_chans,
             embed_dim=self.embed_dim, norm_layer=self.norm_layer, patch_stride = patch_stride)
@@ -465,17 +441,14 @@ class HTSAT_Swin_Transformer(nn.Module):
         patches_resolution = self.patch_embed.grid_size
         self.patches_resolution = patches_resolution
 
-        # absolute position embedding
         if self.ape:
             self.absolute_pos_embed = nn.Parameter(torch.zeros(1, num_patches, self.embed_dim))
             trunc_normal_(self.absolute_pos_embed, std=.02)
 
         self.pos_drop = nn.Dropout(p=self.drop_rate)
 
-        # stochastic depth
         dpr = [x.item() for x in torch.linspace(0, self.drop_path_rate, sum(self.depths))]  # stochastic depth decay rule
 
-        # build layers
         self.layers = nn.ModuleList()
         for i_layer in range(self.num_layers):
             layer = BasicLayer(dim=int(self.embed_dim * 2 ** i_layer),
@@ -539,25 +512,20 @@ class HTSAT_Swin_Transformer(nn.Module):
             x, attn = layer(x)
 
         if self.config.enable_tscam:
-            # for x
             x = self.norm(x)
             B, N, C = x.shape
             SF = frames_num // (2 ** (len(self.depths) - 1)) // self.patch_stride[0]
             ST = frames_num // (2 ** (len(self.depths) - 1)) // self.patch_stride[1]
             x = x.permute(0,2,1).contiguous().reshape(B, C, SF, ST)
             B, C, F, T = x.shape
-            # group 2D CNN
             c_freq_bin = F // self.freq_ratio
             x = x.reshape(B, C, F // c_freq_bin, c_freq_bin, T)
             x = x.permute(0,1,3,2,4).contiguous().reshape(B, C, c_freq_bin, -1)
 
-            # get latent_output
             latent_output = self.avgpool(torch.flatten(x,2))
             latent_output = torch.flatten(latent_output, 1)
 
-            # display the attention map, if needed
             if self.config.htsat_attn_heatmap:
-                # for attn
                 attn = torch.mean(attn, dim = 1)
                 attn = torch.mean(attn, dim = 1)
                 attn = attn.reshape(B, SF, ST)
@@ -571,7 +539,7 @@ class HTSAT_Swin_Transformer(nn.Module):
                 attn = attn.unsqueeze(dim = 2)
 
             x = self.tscam_conv(x)
-            x = torch.flatten(x, 2) # B, C, T
+            x = torch.flatten(x, 2)
 
             if self.config.htsat_attn_heatmap:
                 fpx = interpolate(torch.sigmoid(x).permute(0,2,1).contiguous() * attn, 8 * self.patch_stride[1])
@@ -583,19 +551,19 @@ class HTSAT_Swin_Transformer(nn.Module):
 
             if self.config.loss_type == "clip_ce":
                 output_dict = {
-                    'framewise_output': fpx, # already sigmoided
+                    'framewise_output': fpx,
                     'clipwise_output': x,
                     'latent_output': latent_output
                 }
             else:
                 output_dict = {
-                    'framewise_output': fpx, # already sigmoided
+                    'framewise_output': fpx,
                     'clipwise_output': torch.sigmoid(x),
                     'latent_output': latent_output
                 }
 
         else:
-            x = self.norm(x)  # B N C
+            x = self.norm(x)
             B, N, C = x.shape
 
             fpx = x.permute(0,2,1).contiguous().reshape(B, C, frames_num // (2 ** (len(self.depths) + 1)), frames_num // (2 ** (len(self.depths) + 1)) )
@@ -605,7 +573,7 @@ class HTSAT_Swin_Transformer(nn.Module):
             fpx = fpx.permute(0,1,3,2,4).contiguous().reshape(B, C, c_freq_bin, -1)
             fpx = torch.sum(fpx, dim = 2)
             fpx = interpolate(fpx.permute(0,2,1).contiguous(), 8 * self.patch_stride[1])
-            x = self.avgpool(x.transpose(1, 2))  # B C 1
+            x = self.avgpool(x.transpose(1, 2))
             x = torch.flatten(x, 1)
             if self.num_classes > 0:
                 x = self.head(x)
@@ -625,32 +593,26 @@ class HTSAT_Swin_Transformer(nn.Module):
             tx[i][0] = x[i, 0, crop_pos:crop_pos + crop_size,:]
         return tx
 
-    # Reshape the wavform to a img size, if you want to use the pretrained swin transformer model
     def reshape_wav2img(self, x):
         B, C, T, F = x.shape
         target_T = int(self.spec_size * self.freq_ratio)
         target_F = self.spec_size // self.freq_ratio
         assert T <= target_T and F <= target_F, "the wav size should less than or equal to the swin input size"
-        # to avoid bicubic zero error
         if T < target_T:
             x = nn.functional.interpolate(x, (target_T, x.shape[3]), mode="bicubic", align_corners=True)
         if F < target_F:
             x = nn.functional.interpolate(x, (x.shape[2], target_F), mode="bicubic", align_corners=True)
-        x = x.permute(0,1,3,2).contiguous() # B C F T
-        x = x.reshape(x.shape[0], x.shape[1], x.shape[2], self.freq_ratio, x.shape[3] // self.freq_ratio) # B C F N T/N (4 256)
-        # print(x.shape)
-        x = x.permute(0,1,3,2,4).contiguous() # B C N F T/N (4 64 256)
-        x = x.reshape(x.shape[0], x.shape[1], x.shape[2] * x.shape[3], x.shape[4]) # B C N*F T/N (256 256)
+        x = x.permute(0,1,3,2).contiguous()
+        x = x.reshape(x.shape[0], x.shape[1], x.shape[2], self.freq_ratio, x.shape[3] // self.freq_ratio)
+        x = x.permute(0,1,3,2,4).contiguous()
+        x = x.reshape(x.shape[0], x.shape[1], x.shape[2] * x.shape[3], x.shape[4])
         return x
 
-    # Repeat the wavform to a img size, if you want to use the pretrained swin transformer model
     def repeat_wat2img(self, x, cur_pos):
         B, C, T, F = x.shape
         target_T = int(self.spec_size * self.freq_ratio)
         target_F = self.spec_size // self.freq_ratio
         assert T <= target_T and F <= target_F, "the wav size should less than or equal to the swin input size"
-        # to avoid bicubic zero error
-        # here: interpolate to (1024, 64)
         if T < target_T:
             x = nn.functional.interpolate(x, (target_T, x.shape[3]), mode="bicubic", align_corners=True)
         if F < target_F:
@@ -661,20 +623,13 @@ class HTSAT_Swin_Transformer(nn.Module):
         return x
 
     def forward(self, x: torch.Tensor, mixup_lambda = None, infer_mode = False):# out_feat_keys: List[str] = None):
-        # x = self.spectrogram_extractor(x)   # (batch_size, 1, time_steps, freq_bins)
-        # x = self.logmel_extractor(x)    # (batch_size, 1, time_steps, mel_bins)
-
-
         x = x.transpose(1, 3)
         x = self.bn0(x)
         x = x.transpose(1, 3)
-        # if self.training:
-        #     x = self.spec_augmenter(x)
         if self.training and mixup_lambda is not None:
             x = do_mixup(x, mixup_lambda)
 
         if infer_mode:
-            # in infer mode. we need to handle different length audio input
             frame_num = x.shape[2]
             target_T = int(self.spec_size * self.freq_ratio)
             repeat_ratio = math.floor(target_T / frame_num)
@@ -711,10 +666,9 @@ class HTSAT_Swin_Transformer(nn.Module):
                     x = self.reshape_wav2img(x)
                     output_dict = self.forward_features(x)
                 else:
-                    # Change: Hard code here
-                    overlap_size = 512 #(x.shape[2] - 1) // 4
+                    overlap_size = 512
                     output_dicts = []
-                    crop_size = 1024 # (x.shape[2] - 1) // 2
+                    crop_size = 1024
                     for cur_pos in range(0, x.shape[2] - crop_size - 1, overlap_size):
                         tx = self.crop_wav(x, crop_size = crop_size, spe_pos = cur_pos)
                         tx = self.reshape_wav2img(tx)
@@ -734,10 +688,9 @@ class HTSAT_Swin_Transformer(nn.Module):
                         'clipwise_output': clipwise_output,
                         'latent_output': latent_output,
                     }
-            else: # this part is typically used, and most easy one
+            else:
                 x = self.reshape_wav2img(x)
                 output_dict = self.forward_features(x)
-        # x = self.head(x)
         return output_dict
 
 class HTSATWrapper(nn.Module):

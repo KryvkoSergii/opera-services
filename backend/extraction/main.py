@@ -21,9 +21,9 @@ AWS_REGION = os.getenv("AWS_REGION")
 INFERENCE_START_QUEUE_URL = os.getenv("INFERENCE_START_QUEUE_URL")
 INFERENCE_RESULT_QUEUE_URL = os.getenv("INFERENCE_RESULT_QUEUE_URL")
 
-WAIT_TIME_SECONDS = int(os.getenv("WAIT_TIME_SECONDS", "20"))   # long polling
-MAX_MESSAGES = int(os.getenv("MAX_MESSAGES", "1"))              # 1..10
-VISIBILITY_TIMEOUT = int(os.getenv("VISIBILITY_TIMEOUT", "300"))# seconds
+WAIT_TIME_SECONDS = int(os.getenv("WAIT_TIME_SECONDS", "20"))
+MAX_MESSAGES = int(os.getenv("MAX_MESSAGES", "1"))
+VISIBILITY_TIMEOUT = int(os.getenv("VISIBILITY_TIMEOUT", "300"))
 
 if not INFERENCE_START_QUEUE_URL:
     raise RuntimeError("INFERENCE_START_QUEUE_URL env var is required")
@@ -77,7 +77,6 @@ def main_loop() -> None:
             payload = InferenceStartEventPayload(data)
         except Exception:
             log.exception("Bad JSON in message body: %s", body)
-            # не видаляємо — хай піде в DLQ після maxReceiveCount
             continue
 
         start = time.time()
@@ -116,9 +115,6 @@ def main_loop() -> None:
                 "status": EventStatus.FAILED.value
             }
             send(result_payload)
-            # опціонально: збільшити visibility, щоб дати більше часу на ретрай
-            # change_visibility(receipt, 60)
-            # НЕ delete -> SQS retry -> DLQ при потребі
             continue
 
 if __name__ == "__main__":

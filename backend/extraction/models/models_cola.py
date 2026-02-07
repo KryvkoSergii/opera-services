@@ -165,7 +165,6 @@ class ColaMD(pl.LightningModule):
         self.do = torch.nn.Dropout(p=self.p)
         self.input_length = max_len
 
-        # self.encoder = Encoder(drop_connect_rate=p)
         if encoder == "efficientnet":
             self.encoder = Encoder(drop_connect_rate=p)
         elif encoder == "htsat":
@@ -270,7 +269,6 @@ class ColaMD(pl.LightningModule):
 def weights_init(network):
     for m in network:
         classname = m.__class__.__name__
-        # print(classname)
         if classname.find('Linear') != -1:
             m.weight.data.normal_(mean=0.0, std=0.01)
             m.bias.data.zero_()

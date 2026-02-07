@@ -16,27 +16,19 @@ class AudioClassifier(pl.LightningModule):
         super().__init__()
         self.net = net
         self.freeze_encoder = freeze_encoder
-        # self.l2_strength = l2_strength
-        # print(self.net)
         if freeze_encoder == "all":
             for param in self.net.parameters():
                 param.requires_grad = False
         elif freeze_encoder == "early":
-            # print(self.net)
-            # Selective freezing (fine-tuning only the last few layers), name not matching yet
             for name, param in self.net.named_parameters():
-                # print(name)
                 if 'cnn1' in name or 'efficientnet._blocks.0.' in name or 'efficientnet._blocks.1.' in name or "efficientnet._blocks.2." in name or "efficientnet._blocks.3." in name or "efficientnet._blocks.4." in name:
-                    # for efficientnet
                     param.requires_grad = True
                     print(name)
                 elif 'patch_embed' in name or 'layers.0' in name or 'layers.1' in name or 'layers.2' in name or "htsat.norm" in name or "htsat.head" in name or "htsat.tscam_conv" in name:
-                    # for htsat
                     param.requires_grad = True
                     print(name)
                 else:
                     param.requires_grad = False
-                    # print(name)
 
         if head == 'linear':
             self.head = nn.Sequential(nn.Linear(feat_dim, classes))
@@ -53,16 +45,12 @@ class AudioClassifier(pl.LightningModule):
 
         weights_init(self.head)
         self.lr = lr
-        # self.l2_strength = l2_strength
         self.l2_strength_new_layers = l2_strength
         self.l2_strength_encoder = l2_strength * 0.2
         self.loss = loss_func if loss_func else nn.CrossEntropyLoss()
         self.classes = classes
         self.validation_step_outputs = []
         self.test_step_outputs = []
-
-        # self.fc.weight.data.normal_(mean=0.0, std=0.01)
-        # self.fc.bias.data.zero_()
 
     def forward_feature(self, x):
         return self.net(x)
@@ -81,13 +69,10 @@ class AudioClassifier(pl.LightningModule):
         x, y = batch
 
         y_hat = self(x) + 1e-10
-        # print(y_hat, y)
 
-        # loss = F.cross_entropy(y_hat, y)
         loss = self.loss(y_hat, y)
         self.log("train_loss", loss)
 
-        # Apply L2 regularization on head
         l2_regularization = 0
         for param in self.head.parameters():
             l2_regularization += param.pow(2).sum()
@@ -95,7 +80,6 @@ class AudioClassifier(pl.LightningModule):
         self.log("train_l2_head", l2_regularization)
         loss += self.l2_strength_new_layers * l2_regularization
 
-        # Apply L2 regularization on encoder
         l2_regularization = 0
         for param in self.net.parameters():
             l2_regularization += param.pow(2).sum()
@@ -114,9 +98,6 @@ class AudioClassifier(pl.LightningModule):
 
         y_hat = self(x)
 
-        # print(y_hat, y)
-
-        # loss = F.cross_entropy(y_hat, y)
         loss = self.loss(y_hat, y)
 
         probabilities = F.softmax(y_hat, dim=1)
@@ -133,8 +114,6 @@ class AudioClassifier(pl.LightningModule):
         x, y = batch
 
         y_hat = self(x)
-
-        # loss = F.cross_entropy(y_hat, y)
         loss = self.loss(y_hat, y)
 
         probabilities = F.softmax(y_hat, dim=1)
@@ -154,8 +133,6 @@ class AudioClassifier(pl.LightningModule):
 
         auroc = AUROC(task="multiclass", num_classes=self.classes)
         auc = auroc(torch.from_numpy(probs), torch.from_numpy(y))
-
-        # print("valid_auc", auc)
         self.log("valid_auc", auc)
 
         self.validation_step_outputs.clear()
@@ -185,8 +162,6 @@ class AudioClassifierAudioMAE(pl.LightningModule):
         self.net = net
         self.freeze_encoder = freeze_encoder
 
-        # print(self.net)
-
         if head == 'linear':
             print(feat_dim, classes)
             self.head = nn.Sequential(nn.Linear(feat_dim, classes))
@@ -203,16 +178,12 @@ class AudioClassifierAudioMAE(pl.LightningModule):
 
         weights_init(self.head)
         self.lr = lr
-        # self.l2_strength = l2_strength
         self.l2_strength_new_layers = l2_strength
         self.l2_strength_encoder = l2_strength * 0.2
         self.loss = loss_func if loss_func else nn.CrossEntropyLoss()
         self.classes = classes
         self.validation_step_outputs = []
         self.test_step_outputs = []
-
-        # self.fc.weight.data.normal_(mean=0.0, std=0.01)
-        # self.fc.bias.data.zero_()
 
     def forward_feature(self, x):
         return self.net.forward_feature(x)
@@ -225,13 +196,10 @@ class AudioClassifierAudioMAE(pl.LightningModule):
         x, y = batch
 
         y_hat = self(x) + 1e-10
-        # print(y_hat, y)
 
-        # loss = F.cross_entropy(y_hat, y)
         loss = self.loss(y_hat, y)
         self.log("train_loss", loss)
 
-        # Apply L2 regularization on head
         l2_regularization = 0
         for param in self.head.parameters():
             l2_regularization += param.pow(2).sum()
@@ -239,7 +207,6 @@ class AudioClassifierAudioMAE(pl.LightningModule):
         self.log("train_l2_head", l2_regularization)
         loss += self.l2_strength_new_layers * l2_regularization
 
-        # Apply L2 regularization on encoder
         l2_regularization = 0
         for param in self.net.parameters():
             l2_regularization += param.pow(2).sum()
@@ -258,9 +225,6 @@ class AudioClassifierAudioMAE(pl.LightningModule):
 
         y_hat = self(x)
 
-        # print(y_hat, y)
-
-        # loss = F.cross_entropy(y_hat, y)
         loss = self.loss(y_hat, y)
 
         probabilities = F.softmax(y_hat, dim=1)
@@ -278,7 +242,6 @@ class AudioClassifierAudioMAE(pl.LightningModule):
 
         y_hat = self(x)
 
-        # loss = F.cross_entropy(y_hat, y)
         loss = self.loss(y_hat, y)
 
         probabilities = F.softmax(y_hat, dim=1)
@@ -299,7 +262,6 @@ class AudioClassifierAudioMAE(pl.LightningModule):
         auroc = AUROC(task="multiclass", num_classes=self.classes)
         auc = auroc(torch.from_numpy(probs), torch.from_numpy(y))
 
-        # print("valid_auc", auc)
         self.log("valid_auc", auc)
 
         self.validation_step_outputs.clear()
@@ -328,8 +290,6 @@ class AudioClassifierCLAP(pl.LightningModule):
         super().__init__()
         self.net = net
         self.freeze_encoder = freeze_encoder
-        # self.l2_strength = l2_strength
-        # print(self.net)
         self.net.train()
 
         if head == 'linear':
@@ -348,16 +308,12 @@ class AudioClassifierCLAP(pl.LightningModule):
 
         weights_init(self.head)
         self.lr = lr
-        # self.l2_strength = l2_strength
         self.l2_strength_new_layers = l2_strength
         self.l2_strength_encoder = l2_strength * 0.2
         self.loss = loss_func if loss_func else nn.CrossEntropyLoss()
         self.classes = classes
         self.validation_step_outputs = []
         self.test_step_outputs = []
-
-        # self.fc.weight.data.normal_(mean=0.0, std=0.01)
-        # self.fc.bias.data.zero_()
 
     def default_collate(self, batch):
         r"""Puts each data field into a tensor with outer dimension batch size"""
@@ -366,8 +322,6 @@ class AudioClassifierCLAP(pl.LightningModule):
         if isinstance(elem, torch.Tensor):
             out = None
             if torch.utils.data.get_worker_info() is not None:
-                # If we're in a background process, concatenate directly into a
-                # shared memory tensor to avoid an extra copy
                 numel = sum([x.numel() for x in batch])
                 storage = elem.storage()._new_shared(numel)
                 out = elem.new(storage)
@@ -375,13 +329,12 @@ class AudioClassifierCLAP(pl.LightningModule):
         elif elem_type.__module__ == 'numpy' and elem_type.__name__ != 'str_' \
                 and elem_type.__name__ != 'string_':
             if elem_type.__name__ == 'ndarray' or elem_type.__name__ == 'memmap':
-                # array of string classes and object
                 if self.np_str_obj_array_pattern.search(elem.dtype.str) is not None:
                     raise TypeError(
                         self.default_collate_err_msg_format.format(elem.dtype))
 
                 return self.default_collate([torch.as_tensor(b) for b in batch])
-            elif elem.shape == ():  # scalars
+            elif elem.shape == ():
                 return torch.as_tensor(batch)
         elif isinstance(elem, float):
             return torch.tensor(batch, dtype=torch.float64)
@@ -394,7 +347,6 @@ class AudioClassifierCLAP(pl.LightningModule):
         elif isinstance(elem, tuple) and hasattr(elem, '_fields'):  # namedtuple
             return elem_type(*(self.default_collate(samples) for samples in zip(*batch)))
         elif isinstance(elem, collections.abc.Sequence):
-            # check to make sure that the elements in batch have consistent size
             it = iter(batch)
             elem_size = len(next(it))
             if not all(len(elem) == elem_size for elem in it):
@@ -411,7 +363,6 @@ class AudioClassifierCLAP(pl.LightningModule):
         audio_time_series, sample_rate = torchaudio.load(audio_path)
 
         resample_rate = 16000
-        # print(sample_rate)
         if resample and resample_rate != sample_rate:
             import torchaudio.transforms as T
             resampler = T.Resample(sample_rate, resample_rate)
@@ -420,22 +371,15 @@ class AudioClassifierCLAP(pl.LightningModule):
 
     def load_audio_into_tensor(self, audio_path, audio_duration, resample=False):
         r"""Loads audio file and returns raw audio."""
-        # Randomly sample a segment of audio_duration from the clip or pad to match duration
         audio_time_series, sample_rate = self.read_audio(audio_path, resample=resample)
         audio_time_series = audio_time_series.reshape(-1)
 
-        # audio_time_series is shorter than predefined audio duration,
-        # so audio_time_series is extended
         if audio_duration*sample_rate >= audio_time_series.shape[0]:
             repeat_factor = int(np.ceil((audio_duration*sample_rate) /
                                         audio_time_series.shape[0]))
-            # Repeat audio_time_series by repeat_factor to match audio_duration
             audio_time_series = audio_time_series.repeat(repeat_factor)
-            # remove excess part of audio_time_series
             audio_time_series = audio_time_series[0:audio_duration*sample_rate]
         else:
-            # audio_time_series is longer than predefined audio duration,
-            # so audio_time_series is trimmed
             start_index = random.randrange(
                 audio_time_series.shape[0] - audio_duration*sample_rate)
             audio_time_series = audio_time_series[start_index:start_index +
@@ -464,24 +408,17 @@ class AudioClassifierCLAP(pl.LightningModule):
         preprocessed_audio = self.preprocess_audio(x, resample)
         preprocessed_audio = preprocessed_audio.reshape(
             preprocessed_audio.shape[0], preprocessed_audio.shape[2])
-        # print(preprocessed_audio.shape)
-        # return self._get_audio_embeddings(preprocessed_audio)
-        # x = self.net.get_audio_embeddings(x)
         audio_embed, _ = self.net(preprocessed_audio)
-        # print(audio_embed.shape)
         return self.head(audio_embed)
 
     def training_step(self, batch, batch_idx):
         x, y = batch
 
         y_hat = self(x) + 1e-10
-        # print(y_hat, y)
 
-        # loss = F.cross_entropy(y_hat, y)
         loss = self.loss(y_hat, y)
         self.log("train_loss", loss)
 
-        # Apply L2 regularization on head
         l2_regularization = 0
         for param in self.head.parameters():
             l2_regularization += param.pow(2).sum()
@@ -489,9 +426,7 @@ class AudioClassifierCLAP(pl.LightningModule):
         self.log("train_l2_head", l2_regularization)
         loss += self.l2_strength_new_layers * l2_regularization
 
-        # Apply L2 regularization on encoder
         l2_regularization = 0
-        # for param in self.net.clap.audio_encoder.parameters():
         for param in self.net.parameters():
             l2_regularization += param.pow(2).sum()
 
@@ -509,9 +444,6 @@ class AudioClassifierCLAP(pl.LightningModule):
 
         y_hat = self(x)
 
-        # print(y_hat, y)
-
-        # loss = F.cross_entropy(y_hat, y)
         loss = self.loss(y_hat, y)
 
         probabilities = F.softmax(y_hat, dim=1)
@@ -529,7 +461,6 @@ class AudioClassifierCLAP(pl.LightningModule):
 
         y_hat = self(x)
 
-        # loss = F.cross_entropy(y_hat, y)
         loss = self.loss(y_hat, y)
 
         probabilities = F.softmax(y_hat, dim=1)
@@ -550,7 +481,6 @@ class AudioClassifierCLAP(pl.LightningModule):
         auroc = AUROC(task="multiclass", num_classes=self.classes)
         auc = auroc(torch.from_numpy(probs), torch.from_numpy(y))
 
-        # print("valid_auc", auc)
         self.log("valid_auc", auc)
 
         self.validation_step_outputs.clear()
@@ -620,12 +550,8 @@ class LinearHead(pl.LightningModule):
         x, y = batch
 
         y_hat = self(x) + 1e-10
-        # print(y_hat, y)
-
-        # loss = F.cross_entropy(y_hat, y)
         loss = self.loss(y_hat, y)
         self.log("train_loss", loss)
-        # Apply L2 regularization
         l2_regularization = 0
         for param in self.head.parameters():
             l2_regularization += param.pow(2).sum()
@@ -637,8 +563,6 @@ class LinearHead(pl.LightningModule):
 
 
         self.log("train_acc", acc)
-        # print("train_loss", loss)
-        # print("train_acc", acc)f
 
         return loss
 
@@ -647,9 +571,6 @@ class LinearHead(pl.LightningModule):
 
         y_hat = self(x)
 
-        # print(y_hat, y)
-
-        # loss = F.cross_entropy(y_hat, y)
         loss = self.loss(y_hat, y)
 
         probabilities = F.softmax(y_hat, dim=1)
@@ -667,7 +588,6 @@ class LinearHead(pl.LightningModule):
 
         y_hat = self(x)
 
-        # loss = F.cross_entropy(y_hat, y)
         loss = self.loss(y_hat, y)
 
         probabilities = F.softmax(y_hat, dim=1)
@@ -688,7 +608,6 @@ class LinearHead(pl.LightningModule):
         auroc = AUROC(task="multiclass", num_classes=self.classes)
         auc = auroc(torch.from_numpy(probs), torch.from_numpy(y))
 
-        # print("valid_auc", auc)
         self.log("valid_auc", auc)
 
         self.validation_step_outputs.clear()
@@ -727,7 +646,6 @@ class LinearHeadR(pl.LightningModule):
                 param.requires_grad = False
 
         if head == 'linear':
-            # print(feat_dim, output_dim)
             self.head = nn.Sequential(nn.Linear(feat_dim, output_dim))
         elif head == 'mlp':
             self.head = nn.Sequential(
@@ -739,8 +657,6 @@ class LinearHeadR(pl.LightningModule):
             raise NotImplementedError(
                 'head not supported: {}'.format(head))
 
-        # self.head = nn.Linear(dim_in, dim_out)
-
         weights_init(self.head)
         self.lr = lr
         self.l2_strength = l2_strength
@@ -751,12 +667,8 @@ class LinearHeadR(pl.LightningModule):
         self.mean = mean
         self.std = std
 
-        # self.fc.weight.data.normal_(mean=0.0, std=0.01)
-        # self.fc.bias.data.zero_()
-
     def forward(self, x):
         if self.from_feature:
-            # x = (x-self.mean)/self.std
             y = self.head(x)
 
             return y*self.std+self.mean
@@ -765,14 +677,7 @@ class LinearHeadR(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x) + 1e-10
-        #print(y_hat, y)
-
-
-        # loss = F.cross_entropy(y_hat, y)
         loss = self.loss(y_hat, y)
-        # print('training loss:', loss.item())
-
-        # Apply L2 regularization
         l2_regularization = 0
         for param in self.head.parameters():
             l2_regularization += param.pow(2).sum()
@@ -801,7 +706,6 @@ class LinearHeadR(pl.LightningModule):
 
         y_hat = self(x)
 
-        # loss = F.cross_entropy(y_hat, y)
         loss = self.loss(y_hat, y)
         mae = torch.mean(torch.abs(y_hat - y))
         mape = torch.mean(torch.abs((y_hat - y) / y)) * 100
@@ -822,7 +726,6 @@ class LinearHeadR(pl.LightningModule):
         self.log("valid_MAE", mae)
         self.log("valid_MAPE", mape)
         self.log("valid_loss", mse)
-        # print('valid_mae:', mae, 'y:', y[0], 'valid y_hat:', y_hat[0])
 
         self.validation_step_outputs.clear()
 
@@ -837,20 +740,16 @@ class LinearHeadR(pl.LightningModule):
         self.log("test_MAE", mae)
         self.log("test_MAPE", mape)
         self.log("test_loss", mse)
-        #print('test_mae:', mae, y_hat, y)
 
         self.test_step_outputs.clear()
         return mae, mape
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.lr)
-        # return torch.optim.SGD(self.parameters(), lr=self.lr)
-
 
 def weights_init(network):
     for m in network:
         classname = m.__class__.__name__
-        # print(classname)
         if classname.find('Linear') != -1:
             m.weight.data.normal_(mean=0.0, std=0.01)
             m.bias.data.zero_()

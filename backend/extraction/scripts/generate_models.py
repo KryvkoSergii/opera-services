@@ -4,21 +4,14 @@ import sys
 import pathlib
 import re
 
-# -----------------------------
-# Paths
-# -----------------------------
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 SPEC_PATH = ROOT / "contract" / "events.yaml"
 OUT_DIR = ROOT / "backend" / "extraction" / "contracts" / "models"
 PACKAGE_NAME = ""
 
-# -----------------------------
-# Utils
-# -----------------------------
 def die(msg: str):
     print(f"❌ {msg}", file=sys.stderr)
     sys.exit(1)
-
 
 def assert_spec_is_correct():
     if not SPEC_PATH.exists():
@@ -26,7 +19,6 @@ def assert_spec_is_correct():
 
     text = SPEC_PATH.read_text()
 
-    # Guard: ensure camelCase fields exist
     required_fields = ["requestId", "itemId", "fileLocation"]
     for f in required_fields:
         if f not in text:
@@ -58,11 +50,6 @@ def run_asyncapi_generator():
 
 
 def patch_snake_case_to_camel_case():
-    """
-    AsyncAPI python models often access dict like input['request_id'].
-    Patch generated models to also support camelCase keys.
-    """
-
     replacements = {
         "request_id": "requestId",
         "item_id": "itemId",
@@ -80,7 +67,6 @@ def patch_snake_case_to_camel_case():
         original = text
 
         for snake, camel in replacements.items():
-            # input['request_id'] -> input.get('request_id') or input.get('requestId')
             text = re.sub(
                 rf"input\[['\"]{snake}['\"]\]",
                 f"(input.get('{snake}') or input.get('{camel}'))",
@@ -91,10 +77,6 @@ def patch_snake_case_to_camel_case():
             file.write_text(text)
             print(f"  🩹 patched {file.relative_to(OUT_DIR)}")
 
-
-# -----------------------------
-# Main
-# -----------------------------
 def run():
     print("ROOT      =", ROOT)
     print("SPEC_PATH =", SPEC_PATH)

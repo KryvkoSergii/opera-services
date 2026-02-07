@@ -21,7 +21,6 @@ available_preprocessors: Dict[str, PreProcessor] = {
     "operaCT_768": OperaCT768PreProcessor(device)
 }
 
-
 class ResultItem:
     def __init__(self, task: str, probability: float):
         self.task = task
@@ -30,12 +29,11 @@ class ResultItem:
     def __repr__(self):
         return f"ResultItem(task={self.task}, probability={self.probability})"
 
-
 def process_message(payload: InferenceStartEventPayload, s3_client) -> List[ResultItem]:
     requestId = payload.request_id
     itemId = payload.item_id
     key = payload.file_location
-    source = payload.source  # microphone, stethoscope
+    source = payload.source
 
     request_source = parse_audio_source(source)
 

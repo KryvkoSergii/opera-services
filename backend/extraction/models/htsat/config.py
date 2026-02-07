@@ -2,6 +2,7 @@
 # knutchen@ucsd.edu
 # HTS-AT: A HIERARCHICAL TOKEN-SEMANTIC AUDIO TRANSFORMER FOR SOUND CLASSIFICATION AND DETECTION
 # The configuration for training the model
+# source https://github.com/evelyn0414/OPERA.git
 
 exp_name = "exp_htsat_pretrain" # the saved ckpt prefix name of the model
 workspace = "/home/kechen/Research/HTSAT" # the folder of your code
@@ -17,7 +18,6 @@ loss_type = "clip_bce" #
 
 # trained from a checkpoint, or evaluate a single model
 resume_checkpoint = None
-# "/home/Research/model_backup/AudioSet/HTSAT_AudioSet_Saved_1.ckpt"
 
 esc_fold = 0 # just for esc dataset, select the fold you need for evaluation and (+1) validation
 
@@ -45,8 +45,6 @@ enable_label_enhance = False # enhance hierarchical label
 enable_repeat_mode = False # repeat the spectrogram / reshape the spectrogram
 
 
-
-# for model's design
 enable_tscam = True # enbale the token-semantic layer
 
 # for signal processing
