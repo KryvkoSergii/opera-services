@@ -53,8 +53,8 @@ class DefaultSummaryService(private val modelsRepository: EvaluationModelMetadat
     }
 
     private fun weightFromAuc(auc: Double, gamma: Double = 2.0): Double {
-        val r = (2.0 * auc - 1.0).coerceAtLeast(0.0)     // AUC lift under 0.5
-        return r.pow(gamma)                                         // amplify differences
+        val r = (2.0 * auc - 1.0).coerceAtLeast(0.0)
+        return r.pow(gamma)
     }
 
     private fun aggregateByAucLogit(results: List<R>, gamma: Double = 2.0): Double {

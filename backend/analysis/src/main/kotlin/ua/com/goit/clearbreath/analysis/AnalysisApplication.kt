@@ -7,5 +7,5 @@ import org.springframework.boot.runApplication
 class AnalysisApplication
 
 fun main(args: Array<String>) {
-	runApplication<ua.com.goit.clearbreath.analysis.AnalysisApplication>(*args)
+	runApplication<AnalysisApplication>(*args)
 }

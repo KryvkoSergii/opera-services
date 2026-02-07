@@ -27,7 +27,6 @@ class SecurityConfig(
     fun springSecurityFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain {
         val authWebFilter = AuthenticationWebFilter(JwtReactiveAuthenticationManager(tokenService, userService)).apply {
             setServerAuthenticationConverter(BearerTokenServerAuthenticationConverter())
-            // Stateless: контекст не зберігаємо в сесії, тільки на запит
             setSecurityContextRepository(NoOpServerSecurityContextRepository.getInstance())
         }
 

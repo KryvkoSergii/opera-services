@@ -7,8 +7,8 @@ import java.util.UUID
 import java.util.stream.Collectors
 
 object FileConvertingUtil {
-    private const val MAX_LENGTH: Int = 25 //25 sec per file
-    private const val FREQUENCY: Int = 16000 //16 kHz sampling rate
+    private const val MAX_LENGTH: Int = 25
+    private const val FREQUENCY: Int = 16000
 
     fun runFfmpeg(inputFile: String, outputFilePattern: String) {
         val command = listOf(
