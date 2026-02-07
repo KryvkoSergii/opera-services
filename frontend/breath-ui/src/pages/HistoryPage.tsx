@@ -29,14 +29,16 @@ type Diagnose = {
     severity: Severity;
     disease: string;
     advise: string;
+    probability: number;
 }
 
 function createDiagnose(
     severity: Severity,
     disease: string,
-    advise: string
+    advise: string,
+    probability: number
 ): Diagnose {
-    return {severity, disease, advise};
+    return {severity, disease, advise, probability};
 }
 
 type Row = {
@@ -98,11 +100,12 @@ export default function HistoryPage() {
                     }),
                     sourceType: item.type.toUpperCase() as SourceType,
                     status: item.status as Row["status"],
-                    diagnosis: item.details.map((det) =>
+                    diagnosis: item.details.map(det =>
                         createDiagnose(
                             toSeverity(det.status),
                             det.disease ?? "Unknown",
-                            det.details
+                            det.details,
+                            det.probability
                         )
                     ),
                     recommendation: item.recommendation || "No recommendation",
@@ -171,8 +174,8 @@ export default function HistoryPage() {
 
                                 <TableCell>
                                     <Stack spacing={0.75}>
-                                        {r.diagnosis.map((d) => (
-                                            <Tooltip key={`${r.requestId}-${d.disease}-${d.severity}`} title={d.advise} arrow>
+                                        {r.diagnosis.map(d => (
+                                            <Tooltip title={d.probability} arrow>
                                                 <Stack direction="row" spacing={1} alignItems="center">
                                                     <Typography variant="body2" sx={{ fontWeight: 700 }}>
                                                         {d.disease}
