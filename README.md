@@ -1,4 +1,4 @@
-# Clear Breath – Audio Analysis Platform
+# Clear Breath – Distributed Audio Analysis Platform (Kotlin, TypeScript, Python, AI)
 
 ## Overview
 
